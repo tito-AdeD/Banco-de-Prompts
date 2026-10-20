@@ -1,1 +1,9 @@
-
+[
+  {
+    "id": 1,
+    "titulo": "socio-de-pensamiento",
+    "categoria": "Producto",
+    "fecha": "18/10/2026",
+    "prompt": "Actúa como un socio para analizar problemas"
+  }
+]
