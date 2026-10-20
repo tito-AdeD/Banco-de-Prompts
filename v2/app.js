@@ -25,10 +25,12 @@ contenedor.innerHTML =
 
 document.body.appendChild(contenedor);
 
-      
-          
+                
         console.log(csv);
+const registros = csv.split('\n# ');
+console.log('Posibles registros:', registros.length);
 
+        
     } catch (error) {
 
         console.error(error);
