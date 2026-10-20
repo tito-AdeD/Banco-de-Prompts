@@ -1,20 +1,20 @@
-const CSV_URL =
-'https://raw.githubusercontent.com/tito-AdeD/Banco-de-Prompts/refs/heads/main/Mis%20Prompts%2019102026.csv';
+const JSON_URL = './prompts.json';
 
 async function loadPrompts() {
 
     try {
 
-        const response = await fetch(CSV_URL);
+ const response = await fetch(JSON_URL);
 
-        const csv = await response.text();
+const prompts = await response.json();       
 
-const lineas = csv.split('\n');
+document.getElementById('totalPrompts').textContent =
+    prompts.length + ' prompts encontrados';
 
 document.getElementById('totalPrompts').textContent =
     '74 prompts encontrados';
 
-const primeraLinea = lineas[0];
+const primeraLinea = prompts[0].titulo;
 
 const contenedor =
     document.createElement('div');
