@@ -9,9 +9,13 @@ async function loadPrompts() {
 
         const csv = await response.text();
 
-        document.getElementById('totalPrompts').textContent =
-            'CSV cargado correctamente';
+const lineas = csv.split('\n');
 
+document.getElementById('totalPrompts').textContent =
+    (lineas.length - 1) + ' líneas cargadas';
+
+      
+          
         console.log(csv);
 
     } catch (error) {
