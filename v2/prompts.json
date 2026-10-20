@@ -1,9 +1,16 @@
 [
   {
     "id": 1,
-    "titulo": "socio-de-pensamiento",
+    "titulo": "Socio de pensamiento",
     "categoria": "Producto",
     "fecha": "18/10/2026",
-    "prompt": "Actúa como un socio para analizar problemas"
+    "prompt": "Actúa como un socio para analizar problemas."
+  },
+  {
+    "id": 2,
+    "titulo": "Negociación inmobiliaria",
+    "categoria": "Derecho",
+    "fecha": "16/10/2026",
+    "prompt": "Consultor estratégico para negociación inmobiliaria."
   }
 ]
