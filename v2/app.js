@@ -14,7 +14,7 @@ const lineas = csv.split('\n');
 document.getElementById('totalPrompts').textContent =
     '74 prompts encontrados';
 
-const primeraLinea = lineas[1];
+const primeraLinea = lineas[0];
 
 const contenedor =
     document.createElement('div');
