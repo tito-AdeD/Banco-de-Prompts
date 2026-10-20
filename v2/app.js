@@ -14,6 +14,17 @@ const lineas = csv.split('\n');
 document.getElementById('totalPrompts').textContent =
     (lineas.length - 1) + ' líneas cargadas';
 
+const primeraLinea = lineas[1];
+
+const contenedor =
+    document.createElement('div');
+
+contenedor.innerHTML =
+    '<h2>Primer registro encontrado</h2>' +
+    '<pre>' + primeraLinea + '</pre>';
+
+document.body.appendChild(contenedor);
+
       
           
         console.log(csv);
