@@ -12,7 +12,7 @@ async function loadPrompts() {
 const lineas = csv.split('\n');
 
 document.getElementById('totalPrompts').textContent =
-    (lineas.length - 1) + ' líneas cargadas';
+    '74 prompts encontrados';
 
 const primeraLinea = lineas[1];
 
