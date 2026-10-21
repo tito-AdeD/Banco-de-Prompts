@@ -14,18 +14,7 @@ document.getElementById('totalPrompts').textContent =
 document.getElementById('totalPrompts').textContent =
     '74 prompts encontrados';
 
-const primeraLinea = prompts[0].titulo;
-
-const contenedor =
-    document.createElement('div');
-
-contenedor.innerHTML =
-    '<h2>Primer registro encontrado</h2>' +
-    '<pre>' + primeraLinea + '</pre>';
-
-document.body.appendChild(contenedor);
-
-                
+              
        
         
     } catch (error) {
