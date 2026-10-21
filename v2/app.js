@@ -17,7 +17,7 @@ const contenedor =
     document.getElementById('promptsContainer');
 
 contenedor.innerHTML =
-    '<div>' +
+    '<div class="card">' +
     '<h2>' + prompts[0].titulo + '</h2>' +
     '<p>' + prompts[0].categoria + '</p>' +
     '<p>' + prompts[0].fecha + '</p>' +
