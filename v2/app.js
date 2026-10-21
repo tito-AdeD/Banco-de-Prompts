@@ -1,13 +1,42 @@
-contenedor.innerHTML = '';
+const JSON_URL = './prompts.json';
 
-prompts.forEach(prompt => {
+async function loadPrompts() {
 
-    contenedor.innerHTML +=
-        '<div class="card">' +
-        '<h2>' + prompt.titulo + '</h2>' +
-        '<p>' + prompt.categoria + '</p>' +
-        '<p>' + prompt.fecha + '</p>' +
-        '<button>Ver Prompt</button>' +
-        '</div>';
+    try {
 
-});
+        const response = await fetch(JSON_URL);
+
+        const prompts = await response.json();
+
+        document.getElementById('totalPrompts').textContent =
+            prompts.length + ' prompts encontrados';
+
+        const contenedor =
+            document.getElementById('promptsContainer');
+
+        contenedor.innerHTML = '';
+
+        prompts.forEach(prompt => {
+
+            contenedor.innerHTML +=
+                '<div class="card">' +
+                '<h2>' + prompt.titulo + '</h2>' +
+                '<p>' + prompt.categoria + '</p>' +
+                '<p>' + prompt.fecha + '</p>' +
+                '<button>Ver Prompt</button>' +
+                '</div>';
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById('totalPrompts').textContent =
+            'Error cargando datos';
+
+    }
+
+}
+
+window.onload = loadPrompts;
