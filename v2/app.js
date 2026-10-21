@@ -8,25 +8,30 @@ async function loadPrompts() {
 
         const prompts = await response.json();
 
+        renderPrompts(prompts);
+
         document.getElementById('totalPrompts').textContent =
             prompts.length + ' prompts encontrados';
 
-        const contenedor =
-            document.getElementById('promptsContainer');
+        document
+            .getElementById('searchInput')
+            .addEventListener('input', function () {
 
-        contenedor.innerHTML = '';
+                const texto =
+                    this.value.toLowerCase();
 
-        prompts.forEach(prompt => {
+                const filtrados =
+                    prompts.filter(prompt =>
+                        prompt.titulo.toLowerCase().includes(texto) ||
+                        prompt.categoria.toLowerCase().includes(texto)
+                    );
 
-            contenedor.innerHTML +=
-                '<div class="card">' +
-                '<h2>' + prompt.titulo + '</h2>' +
-                '<p>' + prompt.categoria + '</p>' +
-                '<p>' + prompt.fecha + '</p>' +
-                '<button>Ver Prompt</button>' +
-                '</div>';
+                renderPrompts(filtrados);
 
-        });
+                document.getElementById('totalPrompts').textContent =
+                    filtrados.length + ' prompts encontrados';
+
+            });
 
     } catch (error) {
 
@@ -36,6 +41,27 @@ async function loadPrompts() {
             'Error cargando datos';
 
     }
+
+}
+
+function renderPrompts(prompts) {
+
+    const contenedor =
+        document.getElementById('promptsContainer');
+
+    contenedor.innerHTML = '';
+
+    prompts.forEach(prompt => {
+
+        contenedor.innerHTML +=
+            '<div class="card">' +
+            '<h2>' + prompt.titulo + '</h2>' +
+            '<p><b>Categoría:</b> ' + prompt.categoria + '</p>' +
+            '<p><b>Fecha:</b> ' + prompt.fecha + '</p>' +
+            '<button>Ver Prompt</button>' +
+            '</div>';
+
+    });
 
 }
 
