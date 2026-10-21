@@ -1,24 +1,61 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background: #f3f2f1;
+    color: #323130;
+}
+
 .header {
     background: white;
     padding: 20px;
     border-bottom: 1px solid #d2d0ce;
 }
 
+h1 {
+    color: #0078d4;
+    margin: 0;
+}
+
 #searchInput {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
+    margin-top: 15px;
     padding: 10px;
-    margin-top: 10px;
     border: 1px solid #d2d0ce;
     border-radius: 6px;
-    font-size: 16px;
+}
+
+#totalPrompts {
+    padding: 20px;
+    font-weight: bold;
+}
+
+#promptsContainer {
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #d2d0ce;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.10);
+}
+
+.card h2 {
+    margin-top: 0;
 }
 
 button {
     background: #0078d4;
     color: white;
     border: none;
-    padding: 10px 14px;
     border-radius: 6px;
+    padding: 10px 16px;
     cursor: pointer;
+}
+
+button:hover {
+    background: #106ebe;
 }
