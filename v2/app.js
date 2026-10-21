@@ -6,13 +6,14 @@ async function loadPrompts() {
 
  const response = await fetch(JSON_URL);
 
-const prompts = await response.json();       
+const prompts = await response.json(); 
+        
 
 document.getElementById('totalPrompts').textContent =
     prompts.length + ' prompts encontrados';
 
-document.getElementById('totalPrompts').textContent =
-    '74 prompts encontrados';
+
+        
 const contenedor =
     document.getElementById('promptsContainer');
 
