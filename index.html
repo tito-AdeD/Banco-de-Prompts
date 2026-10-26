@@ -3,13 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Prompts - Tito Aponte Mesa</title>
+    <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (XLSX) para leer Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .strict-three-lines {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 4.5rem;
+            max-height: 4.5rem;
+            line-height: 1.5rem;
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
@@ -44,6 +56,11 @@
                 <button onclick="exportToExcel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm transition flex items-center gap-1.5" title="Exportar a Excel">
                     <i class="fa-solid fa-download"></i>
                 </button>
+
+                <!-- Botón de Borrado Protegido con Clave -->
+                <button onclick="promptClearAll()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-3 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm" title="Borrar toda la información con clave">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -51,6 +68,28 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-8">
         
+        <!-- Tarjetas de Estadísticas / Contador -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div class="bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Total de Prompts Cargados</p>
+                    <h3 id="statTotalPrompts" class="text-2xl font-bold text-white mt-1">0</h3>
+                </div>
+                <div class="bg-indigo-500/10 text-indigo-400 p-3 rounded-lg border border-indigo-500/20">
+                    <i class="fa-solid fa-layer-group text-lg"></i>
+                </div>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Categorías Únicas</p>
+                    <h3 id="statTotalCategories" class="text-2xl font-bold text-white mt-1">0</h3>
+                </div>
+                <div class="bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/20">
+                    <i class="fa-solid fa-tags text-lg"></i>
+                </div>
+            </div>
+        </div>
+
         <!-- Barra de Búsqueda y Filtros -->
         <div class="bg-slate-800/80 backdrop-blur border border-slate-700/60 p-4 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
             <div class="relative w-full md:w-96">
@@ -78,7 +117,7 @@
             </div>
         </div>
 
-        <!-- Contador de resultados -->
+        <!-- Barra de estado secundaria -->
         <div class="flex justify-between items-center mb-4 px-1">
             <p id="promptCount" class="text-xs text-slate-400 font-medium">Mostrando prompts...</p>
             <button onclick="loadSamplePrompts()" class="text-xs text-indigo-400 hover:text-indigo-300 underline transition">Cargar prompts de ejemplo</button>
@@ -86,7 +125,7 @@
 
         <!-- Grid de Prompts -->
         <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Las tarjetas se generan dinámicamente con JavaScript -->
+            <!-- Las tarjetas se generan dinámicamente -->
         </div>
 
         <!-- Estado vacío -->
@@ -97,6 +136,29 @@
             <p class="text-slate-400 text-sm">No se encontraron prompts guardados o que coincidan con la búsqueda.</p>
         </div>
     </main>
+
+    <!-- Modal para Clave de Borrado -->
+    <div id="securityModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-lock text-rose-400"></i> Código de Seguridad</h3>
+                <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-300">
+                    Para vaciar todo el banco de prompts, introduce el código clave de seguridad:
+                </p>
+                <div>
+                    <input type="password" id="securityPin" placeholder="••••" maxlength="4" autofocus
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-lg tracking-widest text-slate-200 focus:outline-none focus:border-rose-500 font-mono">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeSecurityModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-xs font-medium transition">Cancelar</button>
+                    <button type="button" onclick="verifyAndDelete()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">Borrar Todo</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal para Agregar / Editar Prompt -->
     <div id="promptModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
@@ -145,7 +207,7 @@
             </div>
             <div class="p-6 space-y-4">
                 <p class="text-xs text-slate-300 leading-relaxed">
-                    Pega aquí tus múltiples prompts. Puedes separar cada prompt con una línea que contenga tres guiones (<code class="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-400">---</code>) o simplemente bloques de texto.
+                    Pega aquí tus múltiples prompts. Puedes separar cada prompt con una línea que contenga tres guiones (<code class="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-400">---</code>) o bloques de texto.
                 </p>
                 <div>
                     <textarea id="bulkTextContent" rows="10" placeholder="Título: Mi prompt 1&#10;Contenido del prompt...&#10;---&#10;Título: Mi prompt 2&#10;Contenido..."
@@ -169,18 +231,25 @@
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
 
-        // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             if (prompts.length === 0) {
                 loadSamplePrompts(false);
             } else {
                 renderPrompts();
                 updateCategoryFilter();
+                updateStats();
             }
         });
 
         function saveToStorage() {
             localStorage.setItem('tito_prompts', JSON.stringify(prompts));
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('statTotalPrompts').textContent = prompts.length;
+            const uniqueCategories = new Set(prompts.map(p => p.category || 'General'));
+            document.getElementById('statTotalCategories').textContent = uniqueCategories.size;
         }
 
         function showToast(message, type = 'success') {
@@ -209,16 +278,15 @@
             const sortVal = document.getElementById('sortOrder').value;
 
             let filtered = prompts.filter(p => {
-                const matchesSearch = p.title.toLowerCase().includes(searchVal) || p.content.toLowerCase().includes(searchVal);
+                const matchesSearch = (p.title && p.title.toLowerCase().includes(searchVal)) || (p.content && p.content.toLowerCase().includes(searchVal));
                 const matchesCat = catVal === 'all' || p.category === catVal;
                 return matchesSearch && matchesCat;
             });
 
-            // Ordenamiento
             filtered.sort((a, b) => {
-                if (sortVal === 'az') return a.title.localeCompare(b.title);
-                if (sortVal === 'za') return b.title.localeCompare(a.title);
-                return (b.id || 0) - (a.id || 0); // Recientes por defecto
+                if (sortVal === 'az') return (a.title || '').localeCompare(b.title || '');
+                if (sortVal === 'za') return (b.title || '').localeCompare(a.title || '');
+                return (b.id || 0) - (a.id || 0);
             });
 
             document.getElementById('promptCount').textContent = `Mostrando ${filtered.length} de ${prompts.length} prompts`;
@@ -240,21 +308,21 @@
                                 <button onclick="deletePrompt(${p.id})" class="text-slate-400 hover:text-rose-400 p-1.5 transition" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
                             </div>
                         </div>
-                        <h3 class="font-bold text-white text-base mb-2">${escapeHtml(p.title)}</h3>
-                        <div class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 max-h-36 overflow-y-auto mb-4 font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">${escapeHtml(p.content)}</div>
+                        <h3 class="font-bold text-white text-base mb-2">${escapeHtml(p.title || 'Sin Título')}</h3>
+                        <!-- Contenedor estricto a 3 líneas sin desbordarse -->
+                        <div class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 mb-4 font-mono text-xs text-slate-300 leading-relaxed strict-three-lines">${escapeHtml(p.content || '')}</div>
                     </div>
                     
                     <div>
-                        <!-- Botones para copiar y abrir en IAs -->
                         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/60 mb-2">
-                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                                 <i class="fa-regular fa-copy"></i> Copiar Prompt
                             </button>
                             <div class="flex gap-1">
-                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center" title="Abrir en Gemini">✨</button>
-                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center" title="Abrir en ChatGPT">💬</button>
-                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center" title="Abrir en Claude">🧠</button>
-                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center" title="Abrir en Copilot">🌐</button>
+                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
                             </div>
                         </div>
                         <span class="text-[10px] text-slate-500 block text-right">${p.date || ''}</span>
@@ -280,27 +348,29 @@
             renderPrompts();
         }
 
-        // Copiar texto completo de forma robusta
-        function copyPrompt(id) {
+        async function copyPrompt(id) {
             const p = prompts.find(item => item.id === id);
             if (!p) return;
             
-            const textArea = document.createElement("textarea");
-            textArea.value = p.content;
-            document.body.appendChild(textArea);
-            textArea.select();
             try {
-                document.execCommand('copy');
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(p.content);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = p.content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
                 showToast(`¡Prompt "${p.title}" copiado al portapapeles!`);
             } catch (err) {
-                showToast("Error al copiar el prompt", "error");
+                showToast("No se pudo copiar el texto", "error");
             }
-            document.body.removeChild(textArea);
         }
 
-        // Abrir IA copiando automáticamente el prompt
-        function openAI(aiType, id) {
-            copyPrompt(id);
+        async function openAI(aiType, id) {
+            await copyPrompt(id);
             const urls = {
                 gemini: 'https://gemini.google.com/',
                 chatgpt: 'https://chatgpt.com/',
@@ -309,10 +379,9 @@
             };
             setTimeout(() => {
                 window.open(urls[aiType] || 'https://gemini.google.com/', '_blank');
-            }, 200);
+            }, 300);
         }
 
-        // Gestión de Modales
         function openModal(id = null) {
             document.getElementById('promptModal').classList.remove('hidden');
             if (id) {
@@ -341,6 +410,34 @@
 
         function closeBulkModal() {
             document.getElementById('bulkModal').classList.add('hidden');
+        }
+
+        // Lógica de Borrado Seguro con Clave 3501
+        function promptClearAll() {
+            document.getElementById('securityPin').value = '';
+            document.getElementById('securityModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('securityPin').focus(), 100);
+        }
+
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.add('hidden');
+        }
+
+        function verifyAndDelete() {
+            const pin = document.getElementById('securityPin').value;
+            if (pin === '3501') {
+                localStorage.removeItem('tito_prompts');
+                prompts = [];
+                renderPrompts();
+                updateCategoryFilter();
+                updateStats();
+                closeSecurityModal();
+                showToast("Se ha borrado toda la información", "error");
+            } else {
+                showToast("Código incorrecto. Inténtalo de nuevo.", "error");
+                document.getElementById('securityPin').value = '';
+                document.getElementById('securityPin').focus();
+            }
         }
 
         function savePrompt(event) {
@@ -379,7 +476,6 @@
             }
         }
 
-        // Cargar archivo Excel o CSV de forma flexible
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -398,50 +494,40 @@
                         return;
                     }
 
-                    let titleIndex = 0, categoryIndex = 1, contentIndex = 2;
-                    let hasHeaders = false;
+                    let titleIdx = 0, catIdx = 1, dateIdx = 2, promptIdx = 3;
 
-                    const firstRow = jsonData[0].map(cell => String(cell).toLowerCase().trim());
-                    
-                    firstRow.forEach((colName, index) => {
-                        if (['titulo', 'título', 'nombre', 'prompt', 'tema', 'name', 'title'].some(k => colName.includes(k))) {
-                            titleIndex = index;
-                            hasHeaders = true;
-                        }
-                        if (['categoria', 'categoría', 'tag', 'etiqueta', 'tipo', 'category'].some(k => colName.includes(k))) {
-                            categoryIndex = index;
-                            hasHeaders = true;
-                        }
-                        if (['contenido', 'texto', 'prompt', 'descripcion', 'descripción', 'detalle', 'body', 'content'].some(k => colName.includes(k)) && index !== titleIndex) {
-                            contentIndex = index;
-                            hasHeaders = true;
-                        }
-                    });
+                    if (jsonData.length > 0) {
+                        const headerRow = jsonData[0].map(cell => String(cell).toLowerCase().trim());
+                        headerRow.forEach((name, i) => {
+                            if (['titulo', 'título', 'nombre', 'title'].some(k => name.includes(k))) titleIdx = i;
+                            if (['categoria', 'categoría', 'tag', 'tipo', 'category'].some(k => name.includes(k))) catIdx = i;
+                            if (['fecha', 'date'].some(k => name.includes(k))) dateIdx = i;
+                            if (['prompt', 'contenido', 'texto', 'detalle', 'content'].some(k => name.includes(k))) promptIdx = i;
+                        });
+                    }
 
-                    const rowsToProcess = hasHeaders ? jsonData.slice(1) : jsonData;
+                    const rows = jsonData.slice(1);
                     let importedPrompts = [];
 
-                    rowsToProcess.forEach((row, idx) => {
+                    rows.forEach((row, idx) => {
                         if (!row || row.length === 0) return;
-                        
-                        let rawTitle = row[titleIndex] !== undefined ? String(row[titleIndex]).trim() : '';
-                        let rawCategory = row[categoryIndex] !== undefined ? String(row[categoryIndex]).trim() : '';
-                        let rawContent = row[contentIndex] !== undefined ? String(row[contentIndex]).trim() : '';
 
-                        if (row.length === 1) {
-                            rawContent = rawTitle;
-                            rawTitle = `Prompt #${prompts.length + importedPrompts.length + 1}`;
-                        } else if (row.length >= 2 && !rawContent) {
-                            rawContent = String(row[1]).trim();
+                        let t = row[titleIdx] !== undefined ? String(row[titleIdx]).trim() : '';
+                        let c = row[catIdx] !== undefined ? String(row[catIdx]).trim() : '';
+                        let d = row[dateIdx] !== undefined ? String(row[dateIdx]).trim() : '';
+                        let p = row[promptIdx] !== undefined ? String(row[promptIdx]).trim() : '';
+
+                        if (!p && row.length >= 2) {
+                            p = String(row[row.length - 1]).trim();
                         }
 
-                        if (rawContent || rawTitle) {
+                        if (t || p) {
                             importedPrompts.push({
                                 id: Date.now() + idx + Math.floor(Math.random() * 1000),
-                                title: rawTitle || rawContent.substring(0, 50) + '...',
-                                category: rawCategory || 'General',
-                                content: rawContent || rawTitle,
-                                date: new Date().toLocaleDateString('es-ES')
+                                title: t || 'Sin Título',
+                                category: c || 'General',
+                                content: p || t,
+                                date: d || new Date().toLocaleDateString('es-ES')
                             });
                         }
                     });
@@ -451,20 +537,19 @@
                         saveToStorage();
                         renderPrompts();
                         updateCategoryFilter();
-                        showToast(`¡Se cargaron ${importedPrompts.length} prompts con éxito!`);
+                        showToast(`¡Se cargaron ${importedPrompts.length} prompts correctamente!`);
                     } else {
-                        showToast("No se encontraron prompts válidos en el archivo", "error");
+                        showToast("No se encontraron registros válidos en el archivo.", "error");
                     }
                 } catch (error) {
                     console.error("Error leyendo archivo:", error);
-                    showToast("Error al procesar el archivo. Asegúrate de que sea un archivo .xlsx, .xls o .csv válido.", "error");
+                    showToast("Error al procesar el archivo Excel.", "error");
                 }
                 event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // Procesar Texto Masivo
         function processBulkText() {
             const text = document.getElementById('bulkTextContent').value.trim();
             if (!text) {
@@ -506,7 +591,6 @@
             showToast(`¡Se importaron ${importedCount} prompts correctamente!`);
         }
 
-        // Exportar a Excel
         function exportToExcel() {
             if (prompts.length === 0) {
                 showToast("No hay prompts para exportar", "error");
@@ -515,8 +599,8 @@
             const dataToExport = prompts.map(p => ({
                 Título: p.title,
                 Categoría: p.category,
-                Contenido: p.content,
-                Fecha: p.date
+                Fecha: p.date,
+                Prompt: p.content
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -526,21 +610,20 @@
             showToast("¡Archivo Excel exportado con éxito!");
         }
 
-        // Cargar Ejemplos Predeterminados
         function loadSamplePrompts(showNotify = true) {
             const sampleData = [
                 {
                     id: 1,
                     title: "Estructurador de Prompt Maestro (P-Superprompt)",
                     category: "Ingeniería de Prompts",
-                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts. Tu propósito es crear, corregir, optimizar o explicar cualquier instrucción o prompt para maximizar el rendimiento de la Inteligencia Artificial bajo la fórmula: Contexto-Rol / Consulta-Tarea / Especificaciones / Criterios de Calidad / Formato de Respuesta.",
+                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts. Tu propósito es crear, corregir, optimizar o explicar cualquier instrucción o prompt para maximizar el rendimiento de la Inteligencia Artificial.",
                     date: new Date().toLocaleDateString('es-ES')
                 },
                 {
                     id: 2,
                     title: "Análisis de Datos y Código Limpio",
                     category: "Desarrollo",
-                    content: "Actúa como un Ingeniero de Software Senior. Revisa el siguiente código buscando posibles cuellos de botella, problemas de seguridad y optimizaciones de rendimiento. Entrega la solución estructurada en bloques limpios y explicaciones claras con viñetas.",
+                    content: "Actúa como un Ingeniero de Software Senior. Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento.",
                     date: new Date().toLocaleDateString('es-ES')
                 }
             ];
