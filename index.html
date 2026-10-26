@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Prompts - Tito Aponte Mesa</title>
+    <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (XLSX) para leer Excel -->
@@ -44,10 +44,11 @@
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer flex items-center gap-1.5">
+                <button onclick="promptUploadExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
-                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
-                </label>
+                </button>
+                <!-- Input oculto para el archivo -->
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="processFileConfirmed(event)">
 
                 <button onclick="openBulkModal()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5">
                     <i class="fa-solid fa-paste"></i> Masivo
@@ -115,24 +116,24 @@
         </div>
     </main>
 
-    <!-- Modal para Clave de Borrado -->
+    <!-- Modal para Clave de Seguridad (Borrado o Carga) -->
     <div id="securityModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white border border-slate-300 rounded-xl w-full max-w-sm shadow-xl overflow-hidden">
             <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-rose-500"></i> Código de Seguridad</h3>
+                <h3 id="securityModalTitle" class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-indigo-600"></i> Código de Seguridad</h3>
                 <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-xs text-slate-600">
-                    Introduce el código clave de seguridad para vaciar el banco de prompts:
+                <p id="securityModalDesc" class="text-xs text-slate-600">
+                    Introduce el código clave de seguridad:
                 </p>
                 <div>
                     <input type="password" id="securityPin" placeholder="••••" maxlength="4" autofocus
-                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-rose-500 font-mono">
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-indigo-600 font-mono">
                 </div>
                 <div class="flex justify-end gap-2 pt-1">
                     <button type="button" onclick="closeSecurityModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition">Cancelar</button>
-                    <button type="button" onclick="verifyAndDelete()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm">Borrar Todo</button>
+                    <button type="button" id="securityConfirmBtn" onclick="verifyAndExecute()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -208,6 +209,7 @@
     <!-- Script de la Aplicación -->
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
+        let pendingActionType = null; // 'clear' o 'upload'
 
         document.addEventListener('DOMContentLoaded', () => {
             if (prompts.length === 0) {
@@ -389,7 +391,22 @@
             document.getElementById('bulkModal').classList.add('hidden');
         }
 
+        // Sistema de Seguridad unificado con clave 3501
         function promptClearAll() {
+            pendingActionType = 'clear';
+            document.getElementById('securityModalTitle').innerHTML = '<i class="fa-solid fa-lock text-rose-600"></i> Código de Seguridad (Borrar)';
+            document.getElementById('securityModalDesc').textContent = 'Introduce el código clave para borrar toda la información:';
+            document.getElementById('securityConfirmBtn').className = 'bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm';
+            document.getElementById('securityPin').value = '';
+            document.getElementById('securityModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('securityPin').focus(), 100);
+        }
+
+        function promptUploadExcel() {
+            pendingActionType = 'upload';
+            document.getElementById('securityModalTitle').innerHTML = '<i class="fa-solid fa-lock text-indigo-600"></i> Código de Seguridad (Cargar Excel)';
+            document.getElementById('securityModalDesc').textContent = 'Introduce el código clave para cargar el archivo Excel:';
+            document.getElementById('securityConfirmBtn').className = 'bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm';
             document.getElementById('securityPin').value = '';
             document.getElementById('securityModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('securityPin').focus(), 100);
@@ -397,18 +414,23 @@
 
         function closeSecurityModal() {
             document.getElementById('securityModal').classList.add('hidden');
+            pendingActionType = null;
         }
 
-        function verifyAndDelete() {
+        function verifyAndExecute() {
             const pin = document.getElementById('securityPin').value;
             if (pin === '3501') {
-                localStorage.removeItem('tito_prompts');
-                prompts = [];
-                renderPrompts();
-                updateCategoryFilter();
-                updateStats();
                 closeSecurityModal();
-                showToast("Se ha borrado toda la información", "error");
+                if (pendingActionType === 'clear') {
+                    localStorage.removeItem('tito_prompts');
+                    prompts = [];
+                    renderPrompts();
+                    updateCategoryFilter();
+                    updateStats();
+                    showToast("Se ha borrado toda la información", "error");
+                } else if (pendingActionType === 'upload') {
+                    document.getElementById('excelFile').click();
+                }
             } else {
                 showToast("Código incorrecto", "error");
                 document.getElementById('securityPin').value = '';
@@ -452,7 +474,7 @@
             }
         }
 
-        function handleFileUpload(event) {
+        function processFileConfirmed(event) {
             const file = event.target.files[0];
             if (!file) return;
 
