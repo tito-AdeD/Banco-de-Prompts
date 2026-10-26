@@ -23,93 +23,71 @@
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans antialiased">
 
-    <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <!-- Header Estilo Windows / Claro -->
+    <header class="bg-white border-b border-slate-300 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30">
-                    <i class="fa-solid fa-brain text-xl"></i>
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-sm">
+                    <i class="fa-solid fa-brain text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">Banco de Prompts</h1>
-                    <p class="text-xs text-slate-400">Gestión inteligente para IA - Tito Aponte Mesa</p>
+                    <h1 class="text-lg font-bold tracking-tight text-slate-900">Banco de Prompts</h1>
+                    <p class="text-[11px] text-slate-500">Tito Aponte • Total: <span id="headerTotalPrompts">0</span></p>
                 </div>
             </div>
 
-            <!-- Botones de Acción Global -->
-            <div class="flex flex-wrap items-center gap-2.5">
-                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Nuevo Prompt
+            <!-- Botones de Acción Global Compactos -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <label class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm cursor-pointer flex items-center gap-2">
-                    <i class="fa-solid fa-file-excel"></i> Cargar Excel / CSV
+                <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-excel"></i> Cargar Excel
                     <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
                 </label>
 
-                <button onclick="openBulkModal()" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-paste"></i> Pegar Texto Masivo
+                <button onclick="openBulkModal()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-paste"></i> Masivo
                 </button>
 
-                <button onclick="exportToExcel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm transition flex items-center gap-1.5" title="Exportar a Excel">
+                <button onclick="exportToExcel()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1" title="Exportar a Excel">
                     <i class="fa-solid fa-download"></i>
                 </button>
 
                 <!-- Botón de Borrado Protegido con Clave -->
-                <button onclick="promptClearAll()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-3 py-2 rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm" title="Borrar toda la información con clave">
+                <button onclick="promptClearAll()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1" title="Borrar todo con clave">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Main Container con Espacio Optimizado -->
+    <main class="max-w-7xl mx-auto px-4 py-4">
         
-        <!-- Tarjetas de Estadísticas / Contador -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div class="bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow-md flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-400 font-medium">Total de Prompts Cargados</p>
-                    <h3 id="statTotalPrompts" class="text-2xl font-bold text-white mt-1">0</h3>
-                </div>
-                <div class="bg-indigo-500/10 text-indigo-400 p-3 rounded-lg border border-indigo-500/20">
-                    <i class="fa-solid fa-layer-group text-lg"></i>
-                </div>
-            </div>
-            <div class="bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow-md flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-400 font-medium">Categorías Únicas</p>
-                    <h3 id="statTotalCategories" class="text-2xl font-bold text-white mt-1">0</h3>
-                </div>
-                <div class="bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/20">
-                    <i class="fa-solid fa-tags text-lg"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Barra de Búsqueda y Filtros -->
-        <div class="bg-slate-800/80 backdrop-blur border border-slate-700/60 p-4 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="relative w-full md:w-96">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400"></i>
-                <input type="text" id="searchInput" placeholder="Buscar por título o contenido..." oninput="filterPrompts()" 
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+        <!-- Barra de Búsqueda y Filtros Compacta en una sola línea -->
+        <div class="bg-white border border-slate-300 p-3 rounded-lg shadow-sm mb-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div class="relative w-full md:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" id="searchInput" placeholder="Buscar prompt..." oninput="filterPrompts()" 
+                    class="w-full bg-slate-50 border border-slate-300 rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition">
             </div>
 
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400 font-medium">Categoría:</span>
-                    <select id="categoryFilter" onchange="filterPrompts()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
-                        <option value="all">Todas las categorías</option>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] text-slate-500 font-medium">Categoría:</span>
+                    <select id="categoryFilter" onchange="filterPrompts()" class="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                        <option value="all">Todas</option>
                     </select>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400 font-medium">Ordenar:</span>
-                    <select id="sortOrder" onchange="filterPrompts()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
-                        <option value="recent">Más recientes</option>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] text-slate-500 font-medium">Ordenar:</span>
+                    <select id="sortOrder" onchange="filterPrompts()" class="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                        <option value="recent">Recientes</option>
                         <option value="az">A - Z</option>
                         <option value="za">Z - A</option>
                     </select>
@@ -118,66 +96,66 @@
         </div>
 
         <!-- Barra de estado secundaria -->
-        <div class="flex justify-between items-center mb-4 px-1">
-            <p id="promptCount" class="text-xs text-slate-400 font-medium">Mostrando prompts...</p>
-            <button onclick="loadSamplePrompts()" class="text-xs text-indigo-400 hover:text-indigo-300 underline transition">Cargar prompts de ejemplo</button>
+        <div class="flex justify-between items-center mb-3 px-1 text-xs text-slate-500">
+            <span id="promptCount">Mostrando prompts...</span>
+            <button onclick="loadSamplePrompts()" class="text-indigo-600 hover:text-indigo-800 underline transition">Cargar ejemplo</button>
         </div>
 
-        <!-- Grid de Prompts -->
-        <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Grid de Prompts (Tarjetas con fondo blanco y diseño limpio estilo Windows) -->
+        <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Las tarjetas se generan dinámicamente -->
         </div>
 
         <!-- Estado vacío -->
         <div id="emptyState" class="hidden text-center py-16">
-            <div class="inline-block bg-slate-800 p-4 rounded-full text-slate-500 mb-3 text-2xl">
+            <div class="inline-block bg-slate-200 p-4 rounded-full text-slate-400 mb-2 text-xl">
                 <i class="fa-solid fa-folder-open"></i>
             </div>
-            <p class="text-slate-400 text-sm">No se encontraron prompts guardados o que coincidan con la búsqueda.</p>
+            <p class="text-slate-500 text-xs">No se encontraron prompts guardados o que coincidan con la búsqueda.</p>
         </div>
     </main>
 
     <!-- Modal para Clave de Borrado -->
-    <div id="securityModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                <h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-lock text-rose-400"></i> Código de Seguridad</h3>
-                <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div id="securityModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-300 rounded-xl w-full max-w-sm shadow-xl overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-rose-500"></i> Código de Seguridad</h3>
+                <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="p-6 space-y-4">
-                <p class="text-xs text-slate-300">
-                    Para vaciar todo el banco de prompts, introduce el código clave de seguridad:
+            <div class="p-5 space-y-3">
+                <p class="text-xs text-slate-600">
+                    Introduce el código clave de seguridad para vaciar el banco de prompts:
                 </p>
                 <div>
                     <input type="password" id="securityPin" placeholder="••••" maxlength="4" autofocus
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-lg tracking-widest text-slate-200 focus:outline-none focus:border-rose-500 font-mono">
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-rose-500 font-mono">
                 </div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeSecurityModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-xs font-medium transition">Cancelar</button>
-                    <button type="button" onclick="verifyAndDelete()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">Borrar Todo</button>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeSecurityModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition">Cancelar</button>
+                    <button type="button" onclick="verifyAndDelete()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm">Borrar Todo</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal para Agregar / Editar Prompt -->
-    <div id="promptModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                <h3 id="modalTitle" class="font-bold text-lg text-white">Nuevo Prompt</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div id="promptModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-300 rounded-xl w-full max-w-md shadow-xl overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 id="modalTitle" class="font-bold text-sm text-slate-800">Nuevo Prompt</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="promptForm" onsubmit="savePrompt(event)" class="p-6 space-y-4">
+            <form id="promptForm" onsubmit="savePrompt(event)" class="p-5 space-y-3">
                 <input type="hidden" id="promptId">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Título del Prompt</label>
-                    <input type="text" id="formTitle" required placeholder="Ej: Analizador de código avanzado" 
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Título del Prompt</label>
+                    <input type="text" id="formTitle" required placeholder="Ej: Analizador de código" 
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Categoría</label>
-                    <input type="text" id="formCategory" required placeholder="Ej: Desarrollo, Productividad, Redacción" list="categorySuggestions"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Categoría</label>
+                    <input type="text" id="formCategory" required placeholder="Ej: Desarrollo, Productividad" list="categorySuggestions"
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
                     <datalist id="categorySuggestions">
                         <option value="Desarrollo">
                         <option value="Productividad">
@@ -186,44 +164,44 @@
                     </datalist>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Contenido del Prompt</label>
-                    <textarea id="formContent" required rows="6" placeholder="Escribe o pega tu instrucción detallada aquí..."
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono text-xs"></textarea>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Contenido del Prompt</label>
+                    <textarea id="formContent" required rows="5" placeholder="Instrucción detallada..."
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md p-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 font-mono"></textarea>
                 </div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition">Cancelar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-sm">Guardar Prompt</button>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md text-xs font-medium transition shadow-sm">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal para Pegar Texto Masivo -->
-    <div id="bulkModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                <h3 class="font-bold text-lg text-white"><i class="fa-solid fa-paste text-violet-400 mr-2"></i> Importación Masiva de Prompts</h3>
-                <button onclick="closeBulkModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div id="bulkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-300 rounded-xl w-full max-w-lg shadow-xl overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-sm text-slate-800"><i class="fa-solid fa-paste text-violet-600 mr-1.5"></i> Importación Masiva</h3>
+                <button onclick="closeBulkModal()" class="text-slate-400 hover:text-slate-700 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="p-6 space-y-4">
-                <p class="text-xs text-slate-300 leading-relaxed">
-                    Pega aquí tus múltiples prompts. Puedes separar cada prompt con una línea que contenga tres guiones (<code class="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-400">---</code>) o bloques de texto.
+            <div class="p-5 space-y-3">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Pega tus prompts separados por una línea con tres guiones (<code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-600">---</code>).
                 </p>
                 <div>
-                    <textarea id="bulkTextContent" rows="10" placeholder="Título: Mi prompt 1&#10;Contenido del prompt...&#10;---&#10;Título: Mi prompt 2&#10;Contenido..."
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"></textarea>
+                    <textarea id="bulkTextContent" rows="8" placeholder="Título: Mi prompt 1&#10;Contenido...&#10;---&#10;Título: Mi prompt 2&#10;Contenido..."
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md p-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 font-mono"></textarea>
                 </div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeBulkModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition">Cancelar</button>
-                    <button type="button" onclick="processBulkText()" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-sm">Importar Prompts</button>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeBulkModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition">Cancelar</button>
+                    <button type="button" onclick="processBulkText()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-1.5 rounded-md text-xs font-medium transition shadow-sm">Importar</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-slate-700 text-slate-200 px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 text-sm">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 text-xs">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
         <span id="toastMessage">Operación exitosa</span>
     </div>
 
@@ -247,9 +225,8 @@
         }
 
         function updateStats() {
-            document.getElementById('statTotalPrompts').textContent = prompts.length;
-            const uniqueCategories = new Set(prompts.map(p => p.category || 'General'));
-            document.getElementById('statTotalCategories').textContent = uniqueCategories.size;
+            const count = prompts.length;
+            document.getElementById('headerTotalPrompts').textContent = count;
         }
 
         function showToast(message, type = 'success') {
@@ -259,15 +236,15 @@
             
             msg.textContent = message;
             if(type === 'error') {
-                icon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400';
             } else {
-                icon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+                icon.className = 'fa-solid fa-circle-check text-emerald-400';
             }
 
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            }, 2500);
         }
 
         function renderPrompts() {
@@ -299,33 +276,33 @@
 
             emptyState.classList.add('hidden');
             grid.innerHTML = filtered.map(p => `
-                <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-5 flex flex-col justify-between shadow-lg hover:border-slate-600 transition group">
+                <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-slate-400 transition group">
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2">
-                            <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-medium px-2.5 py-0.5 rounded-full">${escapeHtml(p.category || 'General')}</span>
-                            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
-                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-400 p-1.5 transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                                <button onclick="deletePrompt(${p.id})" class="text-slate-400 hover:text-rose-400 p-1.5 transition" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
+                            <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="deletePrompt(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
                             </div>
                         </div>
-                        <h3 class="font-bold text-white text-base mb-2">${escapeHtml(p.title || 'Sin Título')}</h3>
-                        <!-- Contenedor estricto a 3 líneas sin desbordarse -->
-                        <div class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 mb-4 font-mono text-xs text-slate-300 leading-relaxed strict-three-lines">${escapeHtml(p.content || '')}</div>
+                        <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
+                        <!-- Contenedor estricto a 3 líneas -->
+                        <div class="bg-slate-50 border border-slate-200 rounded p-2.5 mb-3 font-mono text-[11px] text-slate-700 leading-relaxed strict-three-lines">${escapeHtml(p.content || '')}</div>
                     </div>
                     
                     <div>
-                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/60 mb-2">
-                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
-                                <i class="fa-regular fa-copy"></i> Copiar Prompt
+                        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 mb-1.5">
+                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> Copiar
                             </button>
                             <div class="flex gap-1">
-                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
-                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
-                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
-                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
+                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
                             </div>
                         </div>
-                        <span class="text-[10px] text-slate-500 block text-right">${p.date || ''}</span>
+                        <span class="text-[9px] text-slate-400 block text-right">${p.date || ''}</span>
                     </div>
                 </div>
             `).join('');
@@ -336,7 +313,7 @@
             const currentVal = select.value;
             const categories = [...new Set(prompts.map(p => p.category || 'General'))].sort();
             
-            select.innerHTML = '<option value="all">Todas las categorías</option>' + 
+            select.innerHTML = '<option value="all">Todas</option>' + 
                 categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
             
             if(categories.includes(currentVal)) {
@@ -363,9 +340,9 @@
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
                 }
-                showToast(`¡Prompt "${p.title}" copiado al portapapeles!`);
+                showToast(`¡Prompt copiado!`);
             } catch (err) {
-                showToast("No se pudo copiar el texto", "error");
+                showToast("No se pudo copiar", "error");
             }
         }
 
@@ -412,7 +389,6 @@
             document.getElementById('bulkModal').classList.add('hidden');
         }
 
-        // Lógica de Borrado Seguro con Clave 3501
         function promptClearAll() {
             document.getElementById('securityPin').value = '';
             document.getElementById('securityModal').classList.remove('hidden');
@@ -434,7 +410,7 @@
                 closeSecurityModal();
                 showToast("Se ha borrado toda la información", "error");
             } else {
-                showToast("Código incorrecto. Inténtalo de nuevo.", "error");
+                showToast("Código incorrecto", "error");
                 document.getElementById('securityPin').value = '';
                 document.getElementById('securityPin').focus();
             }
@@ -453,11 +429,11 @@
                 if (index !== -1) {
                     prompts[index] = { ...prompts[index], title, category, content };
                 }
-                showToast('Prompt actualizado correctamente');
+                showToast('Actualizado correctamente');
             } else {
                 const newPrompt = { id: Date.now(), title, category, content, date: dateStr };
                 prompts.unshift(newPrompt);
-                showToast('Prompt creado con éxito');
+                showToast('Creado con éxito');
             }
 
             saveToStorage();
@@ -467,7 +443,7 @@
         }
 
         function deletePrompt(id) {
-            if (confirm('¿Estás seguro de que deseas eliminar este prompt?')) {
+            if (confirm('¿Deseas eliminar este prompt?')) {
                 prompts = prompts.filter(item => item.id !== id);
                 saveToStorage();
                 renderPrompts();
@@ -537,13 +513,13 @@
                         saveToStorage();
                         renderPrompts();
                         updateCategoryFilter();
-                        showToast(`¡Se cargaron ${importedPrompts.length} prompts correctamente!`);
+                        showToast(`¡Se cargaron ${importedPrompts.length} prompts!`);
                     } else {
-                        showToast("No se encontraron registros válidos en el archivo.", "error");
+                        showToast("No se encontraron registros válidos.", "error");
                     }
                 } catch (error) {
                     console.error("Error leyendo archivo:", error);
-                    showToast("Error al procesar el archivo Excel.", "error");
+                    showToast("Error al procesar el archivo.", "error");
                 }
                 event.target.value = '';
             };
@@ -553,7 +529,7 @@
         function processBulkText() {
             const text = document.getElementById('bulkTextContent').value.trim();
             if (!text) {
-                showToast("Por favor ingresa algún texto", "error");
+                showToast("Ingresa algún texto", "error");
                 return;
             }
 
@@ -588,7 +564,7 @@
             updateCategoryFilter();
             closeBulkModal();
             document.getElementById('bulkTextContent').value = '';
-            showToast(`¡Se importaron ${importedCount} prompts correctamente!`);
+            showToast(`¡Se importaron ${importedCount} prompts!`);
         }
 
         function exportToExcel() {
@@ -607,7 +583,7 @@
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Prompts");
             XLSX.writeFile(workbook, "Banco_de_Prompts_Tito_Aponte.xlsx");
-            showToast("¡Archivo Excel exportado con éxito!");
+            showToast("¡Archivo Excel exportado!");
         }
 
         function loadSamplePrompts(showNotify = true) {
@@ -615,15 +591,15 @@
                 {
                     id: 1,
                     title: "Estructurador de Prompt Maestro (P-Superprompt)",
-                    category: "Ingeniería de Prompts",
-                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts. Tu propósito es crear, corregir, optimizar o explicar cualquier instrucción o prompt para maximizar el rendimiento de la Inteligencia Artificial.",
+                    category: "Ingeniería",
+                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts para maximizar el rendimiento de la Inteligencia Artificial.",
                     date: new Date().toLocaleDateString('es-ES')
                 },
                 {
                     id: 2,
                     title: "Análisis de Datos y Código Limpio",
                     category: "Desarrollo",
-                    content: "Actúa como un Ingeniero de Software Senior. Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento.",
+                    content: "Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento con explicaciones claras.",
                     date: new Date().toLocaleDateString('es-ES')
                 }
             ];
@@ -631,7 +607,7 @@
             saveToStorage();
             renderPrompts();
             updateCategoryFilter();
-            if(showNotify) showToast("Se cargaron los prompts de ejemplo");
+            if(showNotify) showToast("Se cargaron prompts de ejemplo");
         }
 
         function escapeHtml(text) {
