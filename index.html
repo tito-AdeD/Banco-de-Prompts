@@ -502,4 +502,64 @@
             renderPrompts();
             updateCategoryFilter();
             closeBulkModal();
-            document
+            document.getElementById('bulkTextContent').value = '';
+            showToast(`¡Se importaron ${importedCount} prompts correctamente!`);
+        }
+
+        // Exportar a Excel
+        function exportToExcel() {
+            if (prompts.length === 0) {
+                showToast("No hay prompts para exportar", "error");
+                return;
+            }
+            const dataToExport = prompts.map(p => ({
+                Título: p.title,
+                Categoría: p.category,
+                Contenido: p.content,
+                Fecha: p.date
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Prompts");
+            XLSX.writeFile(workbook, "Banco_de_Prompts_Tito_Aponte.xlsx");
+            showToast("¡Archivo Excel exportado con éxito!");
+        }
+
+        // Cargar Ejemplos Predeterminados
+        function loadSamplePrompts(showNotify = true) {
+            const sampleData = [
+                {
+                    id: 1,
+                    title: "Estructurador de Prompt Maestro (P-Superprompt)",
+                    category: "Ingeniería de Prompts",
+                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts. Tu propósito es crear, corregir, optimizar o explicar cualquier instrucción o prompt para maximizar el rendimiento de la Inteligencia Artificial bajo la fórmula: Contexto-Rol / Consulta-Tarea / Especificaciones / Criterios de Calidad / Formato de Respuesta.",
+                    date: new Date().toLocaleDateString('es-ES')
+                },
+                {
+                    id: 2,
+                    title: "Análisis de Datos y Código Limpio",
+                    category: "Desarrollo",
+                    content: "Actúa como un Ingeniero de Software Senior. Revisa el siguiente código buscando posibles cuellos de botella, problemas de seguridad y optimizaciones de rendimiento. Entrega la solución estructurada en bloques limpios y explicaciones claras con viñetas.",
+                    date: new Date().toLocaleDateString('es-ES')
+                }
+            ];
+            prompts = sampleData;
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            if(showNotify) showToast("Se cargaron los prompts de ejemplo");
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
