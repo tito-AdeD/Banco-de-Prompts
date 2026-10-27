@@ -116,7 +116,7 @@
         </div>
     </main>
 
-    <!-- Modal para Clave de Seguridad (Solo Borrado Total o Individual) -->
+    <!-- Modal para Clave de Seguridad (Protegido con 3501) -->
     <div id="securityModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white border border-slate-300 rounded-xl w-full max-w-sm shadow-xl overflow-hidden">
             <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -124,11 +124,11 @@
                 <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-slate-700 transition cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-xs text-slate-600">
-                    Introduce el código clave de seguridad para confirmar el borrado:
+                <p id="securityMsg" class="text-xs text-slate-600">
+                    Introduce el código clave de seguridad (3501):
                 </p>
                 <div>
-                    <input type="password" id="securityPin" placeholder="••••" maxlength="4" autofocus
+                    <input type="password" id="securityPin" placeholder="••••" maxlength="4" onkeydown="if(event.key === 'Enter') verifyAndDelete()"
                         class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-rose-500 font-mono">
                 </div>
                 <div class="flex justify-end gap-2 pt-1">
@@ -209,7 +209,7 @@
     <!-- Script de la Aplicación -->
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
-        let deleteTargetId = null; // ID del prompt a borrar o 'all'
+        let deleteTargetId = null; // 'all' o ID numérico del prompt
 
         document.addEventListener('DOMContentLoaded', () => {
             if (prompts.length === 0) {
@@ -391,10 +391,11 @@
             document.getElementById('bulkModal').classList.add('hidden');
         }
 
-        // Sistema de Seguridad protegido con clave 3501 para borrados
+        // Sistema de Seguridad para Borrados (Clave: 3501)
         function promptClearAll() {
             deleteTargetId = 'all';
             document.getElementById('securityPin').value = '';
+            document.getElementById('securityMsg').textContent = 'Introduce el código clave (3501) para borrar toda la información:';
             document.getElementById('securityModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('securityPin').focus(), 100);
         }
@@ -402,6 +403,7 @@
         function promptDeleteSingle(id) {
             deleteTargetId = id;
             document.getElementById('securityPin').value = '';
+            document.getElementById('securityMsg').textContent = 'Introduce el código clave (3501) para eliminar este prompt:';
             document.getElementById('securityModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('securityPin').focus(), 100);
         }
@@ -412,7 +414,7 @@
         }
 
         function verifyAndDelete() {
-            const pin = document.getElementById('securityPin').value;
+            const pin = document.getElementById('securityPin').value.trim();
             if (pin === '3501') {
                 closeSecurityModal();
                 if (deleteTargetId === 'all') {
@@ -463,7 +465,7 @@
             closeModal();
         }
 
-        // Carga de Excel directa e inmediata (sin bloqueo de clave)
+        // Carga de Excel
         function processFileConfirmed(event) {
             const file = event.target.files[0];
             if (!file) return;
