@@ -6,7 +6,7 @@
     <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS CDN (Librería estable para leer Excel) -->
+    <!-- SheetJS CDN (Librería oficial estable) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -58,7 +58,7 @@
                     <i class="fa-solid fa-download"></i>
                 </button>
 
-                <!-- Botón de Borrado Total Protegido por Clave -->
+                <!-- Botón de Borrado Total Protegido con Clave (3501) -->
                 <button onclick="promptClearAll()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1 cursor-pointer" title="Borrar todo con clave">
                     <i class="fa-solid fa-trash-can"></i> Borrar Todo
                 </button>
@@ -212,13 +212,6 @@
         let actionToDelete = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Asegurar IDs únicos inalterables si algún registro antiguo no lo tiene
-            prompts = prompts.map((p, index) => ({
-                ...p,
-                id: p.id || (Date.now() + index)
-            }));
-            saveToStorage();
-
             if (prompts.length === 0) {
                 loadSamplePrompts(false);
             } else {
@@ -284,15 +277,14 @@
             }
 
             emptyState.classList.add('hidden');
-            // Usamos un identificador seguro basado en cadena/número exacto del objeto `p.id`
             grid.innerHTML = filtered.map(p => `
                 <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-slate-400 transition group">
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2">
                             <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
                             <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
-                                <button onclick="openModal('${p.id}')" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                                <button onclick="requestDeleteSingle('${p.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar con clave"><i class="fa-solid fa-trash text-xs"></i></button>
+                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="requestDeleteSingle(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar con clave"><i class="fa-solid fa-trash text-xs"></i></button>
                             </div>
                         </div>
                         <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
@@ -301,14 +293,14 @@
                     
                     <div>
                         <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 mb-1.5">
-                            <button onclick="copyPrompt('${p.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                 <i class="fa-regular fa-copy"></i> Copiar
                             </button>
                             <div class="flex gap-1">
-                                <button onclick="openAI('gemini', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
-                                <button onclick="openAI('chatgpt', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
-                                <button onclick="openAI('claude', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
-                                <button onclick="openAI('copilot', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
+                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
                             </div>
                         </div>
                         <span class="text-[9px] text-slate-400 block text-right">${p.date || ''}</span>
@@ -334,13 +326,9 @@
             renderPrompts();
         }
 
-        // Búsqueda robusta por ID exacto (soporta número y string)
         async function copyPrompt(id) {
-            const p = prompts.find(item => String(item.id) === String(id));
-            if (!p) {
-                showToast("No se encontró el prompt", "error");
-                return;
-            }
+            const p = prompts.find(item => item.id === id);
+            if (!p) return;
             
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -353,7 +341,7 @@
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
                 }
-                showToast(`¡Prompt copiado con éxito!`);
+                showToast(`¡Prompt copiado!`);
             } catch (err) {
                 showToast("No se pudo copiar", "error");
             }
@@ -374,8 +362,8 @@
 
         function openModal(id = null) {
             document.getElementById('promptModal').classList.remove('hidden');
-            if (id !== null && id !== 'null') {
-                const p = prompts.find(item => String(item.id) === String(id));
+            if (id) {
+                const p = prompts.find(item => item.id === id);
                 if (p) {
                     document.getElementById('modalTitle').textContent = 'Editar Prompt';
                     document.getElementById('promptId').value = p.id;
@@ -436,7 +424,7 @@
                     updateStats();
                     showToast("Se ha borrado toda la información", "error");
                 } else if (actionToDelete !== null) {
-                    prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
+                    prompts = prompts.filter(item => item.id !== actionToDelete);
                     saveToStorage();
                     renderPrompts();
                     updateCategoryFilter();
@@ -459,13 +447,13 @@
             const dateStr = new Date().toLocaleDateString('es-ES');
 
             if (id) {
-                const index = prompts.findIndex(item => String(item.id) === String(id));
+                const index = prompts.findIndex(item => item.id == id);
                 if (index !== -1) {
                     prompts[index] = { ...prompts[index], title, category, content };
                 }
                 showToast('Actualizado correctamente');
             } else {
-                const newPrompt = { id: 'p_' + Date.now() + Math.floor(Math.random()*1000), title, category, content, date: dateStr };
+                const newPrompt = { id: Date.now(), title, category, content, date: dateStr };
                 prompts.unshift(newPrompt);
                 showToast('Creado con éxito');
             }
@@ -476,7 +464,7 @@
             closeModal();
         }
 
-        // --- CARGUE DE EXCEL / CSV CON IDs ÚNICOS ---
+        // --- CARGUE DE EXCEL ULTRA ROBUSTO Y BLINDADO ---
         function triggerFileSelect() {
             document.getElementById('excelFile').click();
         }
@@ -492,9 +480,10 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-                    if (!rawJson || rawJson.length === 0) {
+                    if (!rows || rows.length === 0) {
                         showToast("El archivo Excel está vacío", "error");
                         return;
                     }
@@ -502,38 +491,40 @@
                     let newPrompts = [];
                     const todayStr = new Date().toLocaleDateString('es-ES');
 
-                    rawJson.forEach((row, idx) => {
-                        let title = '', category = 'General', date = todayStr, content = '';
+                    let startIndex = 0;
+                    if (rows.length > 0) {
+                        const firstRowStr = rows[0].join(' ').toLowerCase();
+                        if (firstRowStr.includes('tit') || firstRowStr.includes('prompt') || firstRowStr.includes('nombre')) {
+                            startIndex = 1;
+                        }
+                    }
 
-                        Object.keys(row).forEach(key => {
-                            const cleanKey = key.toString().toLowerCase().trim();
-                            const val = row[key] ? row[key].toString().trim() : '';
+                    for (let i = startIndex; i < rows.length; i++) {
+                        let r = rows[i];
+                        if (!r || r.length === 0) continue;
 
-                            if (cleanKey.includes('tit') || cleanKey.includes('nom') || cleanKey.includes('title')) {
-                                title = val;
-                            } else if (cleanKey.includes('cat') || cleanKey.includes('tipo') || cleanKey.includes('tag')) {
-                                category = val;
-                            } else if (cleanKey.includes('fec') || cleanKey.includes('date')) {
-                                date = val;
-                            } else if (cleanKey.includes('prompt') || cleanKey.includes('cont') || cleanKey.includes('text') || cleanKey.includes('desc')) {
-                                content = val;
-                            }
-                        });
+                        let title = r[0] !== undefined ? String(r[0]).trim() : '';
+                        let category = r[1] !== undefined ? String(r[1]).trim() : 'General';
+                        let date = r[2] !== undefined ? String(r[2]).trim() : '';
+                        let content = r[3] !== undefined ? String(r[3]).trim() : '';
 
-                        const values = Object.values(row).map(v => v ? v.toString().trim() : '').filter(v => v !== '');
-                        if (!title && values.length > 0) title = values[0];
-                        if (!content && values.length > 1) content = values[values.length - 1];
+                        if (!content && r.length > 1) {
+                            content = String(r[r.length - 1]).trim();
+                        }
+                        if (!title && r.length > 0) {
+                            title = String(r[0]).trim();
+                        }
 
                         if (title || content) {
                             newPrompts.push({
-                                id: 'exc_' + Date.now() + idx + Math.floor(Math.random() * 10000),
+                                id: Date.now() + i + Math.floor(Math.random() * 1000),
                                 title: title || 'Sin Título',
                                 category: category || 'General',
                                 content: content || title,
                                 date: date || todayStr
                             });
                         }
-                    });
+                    }
 
                     if (newPrompts.length > 0) {
                         prompts = [...newPrompts, ...prompts];
@@ -542,11 +533,11 @@
                         updateCategoryFilter();
                         showToast(`¡Se cargaron ${newPrompts.length} prompts correctamente!`);
                     } else {
-                        showToast("No se encontraron registros válidos", "error");
+                        showToast("No se encontraron registros válidos en el archivo", "error");
                     }
                 } catch (err) {
                     console.error("Error al leer Excel:", err);
-                    showToast("Error al leer el archivo Excel", "error");
+                    showToast("Error al procesar el archivo Excel", "error");
                 } finally {
                     event.target.value = '';
                 }
@@ -578,7 +569,7 @@
                 }
 
                 prompts.unshift({
-                    id: 'bulk_' + Date.now() + idx,
+                    id: Date.now() + idx,
                     title: title,
                     category: category,
                     content: content,
@@ -617,18 +608,36 @@
         function loadSamplePrompts(showNotify = true) {
             const sampleData = [
                 {
-                    id: 'sample_1',
+                    id: 1,
                     title: "Estructurador de Prompt Maestro (P-Superprompt)",
                     category: "Ingeniería",
                     content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts para maximizar el rendimiento de la Inteligencia Artificial.",
                     date: new Date().toLocaleDateString('es-ES')
                 },
                 {
-                    id: 'sample_2',
+                    id: 2,
                     title: "Análisis de Datos y Código Limpio",
                     category: "Desarrollo",
                     content: "Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento con explicaciones claras.",
                     date: new Date().toLocaleDateString('es-ES')
                 }
             ];
-            
+            prompts = sampleData;
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            if(showNotify) showToast("Se cargaron prompts de ejemplo");
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
