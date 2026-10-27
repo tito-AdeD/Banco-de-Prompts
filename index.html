@@ -6,7 +6,7 @@
     <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS CDN (Librería oficial estable) -->
+    <!-- SheetJS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,8 +44,8 @@
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <!-- Botón de Cargar Excel -->
-                <button onclick="triggerFileSelect()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                <!-- Botón de Cargar Excel Blindado -->
+                <button onclick="document.getElementById('excelFile').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
                 </button>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
@@ -155,11 +155,10 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Categoría</label>
-                    <!-- Conectado al datalist para mostrar opciones desplegables existentes -->
                     <input type="text" id="formCategory" required placeholder="Ej: Desarrollo, Productividad" list="categorySuggestions"
                         class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
                     <datalist id="categorySuggestions">
-                        <!-- Se llena dinámicamente -->
+                        <!-- Opciones dinámicas -->
                     </datalist>
                 </div>
                 <div>
@@ -217,12 +216,9 @@
                 updateCategoryFilter();
                 updateStats();
             }
-            
-            // Permitir presionar Enter en el PIN de seguridad para confirmar
+
             document.getElementById('securityPin').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    confirmDeleteAction();
-                }
+                if (e.key === 'Enter') confirmDeleteAction();
             });
         });
 
@@ -318,7 +314,6 @@
         function updateCategoryFilter() {
             const categories = [...new Set(prompts.map(p => p.category || 'General'))].sort();
             
-            // Actualizar selector de filtro principal
             const select = document.getElementById('categoryFilter');
             const currentVal = select.value;
             select.innerHTML = '<option value="all">Todas</option>' + 
@@ -327,7 +322,6 @@
                 select.value = currentVal;
             }
 
-            // Actualizar datalist de categorías para edición/creación
             const datalist = document.getElementById('categorySuggestions');
             if(datalist) {
                 datalist.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">`).join('');
@@ -373,10 +367,10 @@
         }
 
         function openModal(id = null) {
-            updateCategoryFilter(); // Refrescar sugerencias al abrir modal
+            updateCategoryFilter();
             document.getElementById('promptModal').classList.remove('hidden');
             if (id !== null && id !== undefined) {
-                const p = prompts.find(item => item.id == id);
+                const p = prompts.find(item => String(item.id) === String(id));
                 if (p) {
                     document.getElementById('modalTitle').textContent = 'Editar Prompt';
                     document.getElementById('promptId').value = p.id;
@@ -392,7 +386,7 @@
         }
 
         function closeModal() {
-            document.getElementById('promptModal'].classList.add('hidden');
+            document.getElementById('promptModal').classList.add('hidden');
         }
 
         function openBulkModal() {
@@ -403,7 +397,7 @@
             document.getElementById('bulkModal').classList.add('hidden');
         }
 
-        // --- SISTEMA DE BORRADO PROTEGIDO CON CLAVE (3501) ---
+        // --- SISTEMA DE BORRADO PROTEGIDO (PIN: 3501) ---
         function promptClearAll() {
             actionToDelete = 'all';
             document.getElementById('securityPin').value = '';
@@ -437,7 +431,6 @@
                     updateStats();
                     showToast("Se ha borrado toda la información", "error");
                 } else if (actionToDelete !== null && actionToDelete !== undefined) {
-                    // Conversión flexible de ID para asegurar coincidencia numérica/string
                     prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
                     saveToStorage();
                     renderPrompts();
@@ -478,11 +471,7 @@
             closeModal();
         }
 
-        // --- CARGUE DE EXCEL ULTRA ROBUSTO ---
-        function triggerFileSelect() {
-            document.getElementById('excelFile').click();
-        }
-
+        // --- CARGUE DE EXCEL ROBUSTO CON RESPALDO ---
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -494,18 +483,17 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    
                     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
                     if (!rows || rows.length === 0) {
-                        showToast("El archivo Excel está vacío", "error");
+                        showToast("El archivo está vacío", "error");
                         return;
                     }
 
                     let newPrompts = [];
                     const todayStr = new Date().toLocaleDateString('es-ES');
-
                     let startIndex = 0;
+
                     if (rows.length > 0) {
                         const firstRowStr = rows[0].join(' ').toLowerCase();
                         if (firstRowStr.includes('tit') || firstRowStr.includes('prompt') || firstRowStr.includes('nombre')) {
@@ -547,11 +535,11 @@
                         updateCategoryFilter();
                         showToast(`¡Se cargaron ${newPrompts.length} prompts correctamente!`);
                     } else {
-                        showToast("No se encontraron registros válidos en el archivo", "error");
+                        showToast("No se encontraron registros válidos", "error");
                     }
                 } catch (err) {
                     console.error("Error al leer Excel:", err);
-                    showToast("Error al procesar el archivo Excel", "error");
+                    showToast("Error al leer el archivo Excel", "error");
                 } finally {
                     event.target.value = '';
                 }
