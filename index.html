@@ -209,14 +209,9 @@
         let actionToDelete = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Solo carga ejemplos si el almacenamiento está vacío por primera vez y nunca se ha guardado nada explícitamente
-            if (localStorage.getItem('tito_prompts') === null && prompts.length === 0) {
-                loadSamplePrompts(false);
-            } else {
-                renderPrompts();
-                updateCategoryFilter();
-                updateStats();
-            }
+            renderPrompts();
+            updateCategoryFilter();
+            updateStats();
 
             document.getElementById('securityPin').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') confirmDeleteAction();
@@ -425,8 +420,10 @@
             if (pin === '3501') {
                 closeSecurityModal();
                 if (actionToDelete === 'all') {
+                    // Limpieza total y forzosa de almacenamiento
                     prompts = [];
-                    localStorage.setItem('tito_prompts', JSON.stringify([])); // Guardar array vacío explícitamente
+                    localStorage.clear();
+                    localStorage.setItem('tito_prompts', JSON.stringify([]));
                     renderPrompts();
                     updateCategoryFilter();
                     updateStats();
