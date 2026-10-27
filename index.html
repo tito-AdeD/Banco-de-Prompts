@@ -244,7 +244,7 @@
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0');
-            }, 2500);
+            }, 3000);
         }
 
         function renderPrompts() {
@@ -420,14 +420,18 @@
             if (pin === '3501') {
                 closeSecurityModal();
                 if (actionToDelete === 'all') {
-                    // Limpieza total y forzosa de almacenamiento
+                    // Borrado radical y forzado del almacenamiento local
                     prompts = [];
+                    localStorage.removeItem('tito_prompts');
                     localStorage.clear();
-                    localStorage.setItem('tito_prompts', JSON.stringify([]));
-                    renderPrompts();
-                    updateCategoryFilter();
-                    updateStats();
-                    showToast("Se ha borrado toda la información", "error");
+                    
+                    showToast("Información Borrada Exitosamente", "success");
+                    
+                    // Forzar recarga limpia de la página después de 1 segundo para limpiar caché del navegador
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1000);
+
                 } else if (actionToDelete !== null && actionToDelete !== undefined) {
                     prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
                     saveToStorage();
