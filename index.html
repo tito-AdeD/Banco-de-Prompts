@@ -6,8 +6,8 @@
     <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (XLSX) para leer Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- SheetJS CDN (Librería oficial para leer Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -44,11 +44,11 @@
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <!-- Botón de Cargar Excel -->
-                <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer flex items-center gap-1.5">
+                <!-- Cargar Excel Directo -->
+                <button onclick="document.getElementById('excelFile').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
-                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="processFileConfirmed(event)">
-                </label>
+                </button>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
 
                 <button onclick="openBulkModal()" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-paste"></i> Masivo
@@ -58,8 +58,7 @@
                     <i class="fa-solid fa-download"></i>
                 </button>
 
-                <!-- Botón de Borrado Total Protegido (3501) -->
-                <button onclick="promptClearAll()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1 cursor-pointer" title="Borrar todo con clave">
+                <button onclick="clearAllPrompts()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1 cursor-pointer" title="Borrar todo">
                     <i class="fa-solid fa-trash-can"></i> Borrar Todo
                 </button>
             </div>
@@ -115,30 +114,6 @@
             <p class="text-slate-500 text-xs">No se encontraron prompts guardados o que coincidan con la búsqueda.</p>
         </div>
     </main>
-
-    <!-- Modal de Seguridad Único (Clave: 3501) -->
-    <div id="securityModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white border border-slate-300 rounded-xl w-full max-w-sm shadow-xl overflow-hidden">
-            <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-rose-600"></i> Código de Seguridad (3501)</h3>
-                <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-slate-700 transition cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-5 space-y-3">
-                <p id="securityMsg" class="text-xs text-slate-600">
-                    Introduce el código clave de seguridad para autorizar la eliminación:
-                </p>
-                <div>
-                    <input type="password" id="securityPin" placeholder="••••" maxlength="4"
-                        class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-rose-500 font-mono">
-                </div>
-                <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" onclick="closeSecurityModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer">Cancelar</button>
-                    <!-- Enlace directo correcto a confirmDeleteAction() -->
-                    <button type="button" onclick="confirmDeleteAction()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer">Confirmar</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal para Agregar / Editar Prompt -->
     <div id="promptModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
@@ -210,4 +185,326 @@
     <!-- Script de la Aplicación -->
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
-        let actionToDelete = null; // 'all' o ID
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (prompts.length === 0) {
+                loadSamplePrompts(false);
+            } else {
+                renderPrompts();
+                updateCategoryFilter();
+                updateStats();
+            }
+        });
+
+        function saveToStorage() {
+            localStorage.setItem('tito_prompts', JSON.stringify(prompts));
+            updateStats();
+        }
+
+        function updateStats() {
+            const count = prompts.length;
+            document.getElementById('headerTotalPrompts').textContent = count;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+            
+            msg.textContent = message;
+            if(type === 'error') {
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function renderPrompts() {
+            const grid = document.getElementById('promptsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const catVal = document.getElementById('categoryFilter').value;
+            const sortVal = document.getElementById('sortOrder').value;
+
+            let filtered = prompts.filter(p => {
+                const matchesSearch = (p.title && p.title.toLowerCase().includes(searchVal)) || (p.content && p.content.toLowerCase().includes(searchVal));
+                const matchesCat = catVal === 'all' || p.category === catVal;
+                return matchesSearch && matchesCat;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortVal === 'az') return (a.title || '').localeCompare(b.title || '');
+                if (sortVal === 'za') return (b.title || '').localeCompare(a.title || '');
+                return (b.id || 0) - (a.id || 0);
+            });
+
+            document.getElementById('promptCount').textContent = `Mostrando ${filtered.length} de ${prompts.length} prompts`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(p => `
+                <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-slate-400 transition group">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
+                            <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="deletePrompt(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
+                        <div class="bg-slate-50 border border-slate-200 rounded p-2.5 mb-3 font-mono text-[11px] text-slate-700 leading-relaxed strict-three-lines">${escapeHtml(p.content || '')}</div>
+                    </div>
+                    
+                    <div>
+                        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 mb-1.5">
+                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> Copiar
+                            </button>
+                            <div class="flex gap-1">
+                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-slate-400 block text-right">${p.date || ''}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCategoryFilter() {
+            const select = document.getElementById('categoryFilter');
+            const currentVal = select.value;
+            const categories = [...new Set(prompts.map(p => p.category || 'General'))].sort();
+            
+            select.innerHTML = '<option value="all">Todas</option>' + 
+                categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            
+            if(categories.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        function filterPrompts() {
+            renderPrompts();
+        }
+
+        async function copyPrompt(id) {
+            const p = prompts.find(item => item.id === id);
+            if (!p) return;
+            
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(p.content);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = p.content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showToast(`¡Prompt copiado!`);
+            } catch (err) {
+                showToast("No se pudo copiar", "error");
+            }
+        }
+
+        async function openAI(aiType, id) {
+            await copyPrompt(id);
+            const urls = {
+                gemini: 'https://gemini.google.com/',
+                chatgpt: 'https://chatgpt.com/',
+                claude: 'https://claude.ai/',
+                copilot: 'https://copilot.microsoft.com/'
+            };
+            setTimeout(() => {
+                window.open(urls[aiType] || 'https://gemini.google.com/', '_blank');
+            }, 300);
+        }
+
+        function openModal(id = null) {
+            document.getElementById('promptModal').classList.remove('hidden');
+            if (id) {
+                const p = prompts.find(item => item.id === id);
+                if (p) {
+                    document.getElementById('modalTitle').textContent = 'Editar Prompt';
+                    document.getElementById('promptId').value = p.id;
+                    document.getElementById('formTitle').value = p.title;
+                    document.getElementById('formCategory').value = p.category;
+                    document.getElementById('formContent').value = p.content;
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Nuevo Prompt';
+                document.getElementById('promptForm').reset();
+                document.getElementById('promptId').value = '';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').classList.add('hidden');
+        }
+
+        function openBulkModal() {
+            document.getElementById('bulkModal').classList.remove('hidden');
+        }
+
+        function closeBulkModal() {
+            document.getElementById('bulkModal').classList.add('hidden');
+        }
+
+        function deletePrompt(id) {
+            prompts = prompts.filter(item => item.id !== id);
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            showToast("Prompt eliminado");
+        }
+
+        function clearAllPrompts() {
+            localStorage.removeItem('tito_prompts');
+            prompts = [];
+            renderPrompts();
+            updateCategoryFilter();
+            updateStats();
+            showToast("Banco vaciado correctamente");
+        }
+
+        function savePrompt(event) {
+            event.preventDefault();
+            const id = document.getElementById('promptId').value;
+            const title = document.getElementById('formTitle').value.trim();
+            const category = document.getElementById('formCategory').value.trim() || 'General';
+            const content = document.getElementById('formContent').value.trim();
+            const dateStr = new Date().toLocaleDateString('es-ES');
+
+            if (id) {
+                const index = prompts.findIndex(item => item.id == id);
+                if (index !== -1) {
+                    prompts[index] = { ...prompts[index], title, category, content };
+                }
+                showToast('Actualizado correctamente');
+            } else {
+                const newPrompt = { id: Date.now(), title, category, content, date: dateStr };
+                prompts.unshift(newPrompt);
+                showToast('Creado con éxito');
+            }
+
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            closeModal();
+        }
+
+        // --- LECTOR DE EXCEL DIRECTO CON CONSOLA DE DEPURO ---
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.log("No se seleccionó ningún archivo.");
+                return;
+            }
+
+            console.log("Archivo seleccionado:", file.name, file.size, "bytes");
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    console.log("Hojas encontradas en el Excel:", workbook.SheetNames);
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    // Convertir la hoja directamente en matriz de filas (header: 1)
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                    console.log("Total de filas leídas:", rows.length);
+
+                    if (!rows || rows.length === 0) {
+                        showToast("El archivo está vacío", "error");
+                        return;
+                    }
+
+                    let newPrompts = [];
+                    const todayStr = new Date().toLocaleDateString('es-ES');
+
+                    // Recorremos desde la fila 0 (o 1 si tiene cabecera clara)
+                    // Si la fila 0 tiene las palabras 'titulo' o 'prompt', la saltamos.
+                    let startIdx = 0;
+                    if (rows.length > 0) {
+                        const firstRowStr = JSON.stringify(rows[0]).toLowerCase();
+                        if (firstRowStr.includes('tít') || firstRowStr.includes('tit') || firstRowStr.includes('prompt')) {
+                            startIdx = 1;
+                        }
+                    }
+
+                    for (let i = startIdx; i < rows.length; i++) {
+                        let r = rows[i];
+                        if (!r || r.length === 0) continue;
+
+                        // Limpiar celdas vacías o nulas
+                        let cells = r.map(c => c !== undefined && c !== null ? String(c).trim() : '');
+                        let nonEmp = cells.filter(c => c !== '');
+
+                        if (nonEmp.length === 0) continue;
+
+                        let title = cells[0] || 'Sin Título';
+                        let category = cells[1] || 'General';
+                        let date = cells[2] || todayStr;
+                        let content = cells[3] || nonEmp[nonEmp.length - 1] || title;
+
+                        // Si la celda 1 parece fecha o contenido en vez de categoría
+                        if (category.includes('/') || category.length > 25) {
+                            date = category;
+                            category = 'General';
+                        }
+
+                        newPrompts.push({
+                            id: Date.now() + i + Math.floor(Math.random() * 10000),
+                            title: title,
+                            category: category,
+                            content: content,
+                            date: date.length < 15 ? date : todayStr
+                        });
+                    }
+
+                    console.log("Prompts procesados con éxito:", newPrompts);
+
+                    if (newPrompts.length > 0) {
+                        prompts = [...newPrompts, ...prompts];
+                        saveToStorage();
+                        renderPrompts();
+                        updateCategoryFilter();
+                        showToast(`¡Se cargaron ${newPrompts.length} prompts con éxito!`);
+                    } else {
+                        showToast("No se encontraron datos legibles en el archivo.", "error");
+                    }
+                } catch (err) {
+                    console.error("Error crítico al procesar Excel:", err);
+                    showToast("Error al procesar el archivo Excel (ver consola F12)", "error");
+                } finally {
+                    event.target.value = ''; // Limpiar input file
+                }
+            };
+            
+            reader.onerror = function (err) {
+                console.error("Error al leer el archivo con FileReader:", err);
+                showToast("No se pudo leer el archivo", "error");
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function process
