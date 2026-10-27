@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold tracking-tight text-slate-900">Banco de Prompts</h1>
-                    <p class="text-[11px] text-slate-500">Tito Aponte • Total: <span id="headerTotalPrompts">0</span></p>
+                    <p class="text-[11px] text-slate-500">Tito Aponte Mesa• Total: <span id="headerTotalPrompts">0</span></p>
                 </div>
             </div>
 
@@ -175,4 +175,479 @@
     </div>
 
     <!-- Modal para Pegar Texto Masivo -->
-    <div id="bulkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-
+    <div id="bulkModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-300 rounded-xl w-full max-w-lg shadow-xl overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-sm text-slate-800"><i class="fa-solid fa-paste text-violet-600 mr-1.5"></i> Importación Masiva</h3>
+                <button onclick="closeBulkModal()" class="text-slate-400 hover:text-slate-700 transition cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Pega tus prompts separados por una línea con tres guiones (<code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-600">---</code>).
+                </p>
+                <div>
+                    <textarea id="bulkTextContent" rows="8" placeholder="Título: Mi prompt 1&#10;Contenido...&#10;---&#10;Título: Mi prompt 2&#10;Contenido..."
+                        class="w-full bg-slate-50 border border-slate-300 rounded-md p-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 font-mono"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeBulkModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer">Cancelar</button>
+                    <button type="button" onclick="processBulkText()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer">Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 text-xs">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">Operación exitosa</span>
+    </div>
+
+    <!-- Lógica de la Aplicación -->
+    <script>
+        const STORAGE_KEY = 'tito_banco_prompts_v1';
+        let prompts = [];
+        let actionToDelete = null;
+
+        // Cargar registros existentes
+        function loadFromStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                prompts = stored ? JSON.parse(stored) : [];
+            } catch(e) {
+                prompts = [];
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            updateStats();
+
+            document.getElementById('securityPin').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') confirmDeleteAction();
+            });
+        });
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
+            updateStats();
+            updateCategoryFilter();
+        }
+
+        function updateStats() {
+            const count = prompts.length;
+            document.getElementById('headerTotalPrompts').textContent = count;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+            
+            msg.textContent = message;
+            if(type === 'error') {
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function renderPrompts() {
+            const grid = document.getElementById('promptsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const catVal = document.getElementById('categoryFilter').value;
+            const sortVal = document.getElementById('sortOrder').value;
+
+            let filtered = prompts.filter(p => {
+                const matchesSearch = (p.title && p.title.toLowerCase().includes(searchVal)) || (p.content && p.content.toLowerCase().includes(searchVal));
+                const matchesCat = catVal === 'all' || p.category === catVal;
+                return matchesSearch && matchesCat;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortVal === 'az') return (a.title || '').localeCompare(b.title || '');
+                if (sortVal === 'za') return (b.title || '').localeCompare(a.title || '');
+                return (b.id || 0) - (a.id || 0);
+            });
+
+            document.getElementById('promptCount').textContent = `Mostrando ${filtered.length} de ${prompts.length} prompts`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(p => `
+                <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-slate-400 transition group">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
+                            <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="requestDeleteSingle(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar con clave"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
+                        <div class="bg-slate-50 border border-slate-200 rounded p-2.5 mb-3 font-mono text-[11px] text-slate-700 leading-relaxed strict-three-lines">${escapeHtml(p.content || '')}</div>
+                    </div>
+                    
+                    <div>
+                        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 mb-1.5">
+                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> Copiar
+                            </button>
+                            <div class="flex gap-1">
+                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-slate-400 block text-right">${p.date || ''}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCategoryFilter() {
+            const categories = [...new Set(prompts.map(p => p.category || 'General'))].sort();
+            
+            const select = document.getElementById('categoryFilter');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="all">Todas</option>' + 
+                categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if(categories.includes(currentVal)) {
+                select.value = currentVal;
+            }
+
+            const datalist = document.getElementById('categorySuggestions');
+            if(datalist) {
+                datalist.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">`).join('');
+            }
+        }
+
+        function filterPrompts() {
+            renderPrompts();
+        }
+
+        async function copyPrompt(id) {
+            const p = prompts.find(item => item.id === id);
+            if (!p) return;
+            
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(p.content);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = p.content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showToast(`¡Prompt copiado!`);
+            } catch (err) {
+                showToast("No se pudo copiar", "error");
+            }
+        }
+
+        async function openAI(aiType, id) {
+            await copyPrompt(id);
+            const urls = {
+                gemini: 'https://gemini.google.com/',
+                chatgpt: 'https://chatgpt.com/',
+                claude: 'https://claude.ai/',
+                copilot: 'https://copilot.microsoft.com/'
+            };
+            setTimeout(() => {
+                window.open(urls[aiType] || 'https://gemini.google.com/', '_blank');
+            }, 300);
+        }
+
+        function openModal(id = null) {
+            updateCategoryFilter();
+            document.getElementById('promptModal').classList.remove('hidden');
+            if (id !== null && id !== undefined) {
+                const p = prompts.find(item => String(item.id) === String(id));
+                if (p) {
+                    document.getElementById('modalTitle').textContent = 'Editar Prompt';
+                    document.getElementById('promptId').value = p.id;
+                    document.getElementById('formTitle').value = p.title;
+                    document.getElementById('formCategory').value = p.category;
+                    document.getElementById('formContent').value = p.content;
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Nuevo Prompt';
+                document.getElementById('promptForm').reset();
+                document.getElementById('promptId').value = '';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').classList.add('hidden');
+        }
+
+        function openBulkModal() {
+            document.getElementById('bulkModal').classList.remove('hidden');
+        }
+
+        function closeBulkModal() {
+            document.getElementById('bulkModal').classList.add('hidden');
+        }
+
+        // --- SISTEMA DE BORRADO PROTEGIDO (PIN: 3501) ---
+        function promptClearAll() {
+            actionToDelete = 'all';
+            document.getElementById('securityPin').value = '';
+            document.getElementById('securityMsg').textContent = 'Introduce el código (3501) para borrar TODO el banco:';
+            document.getElementById('securityModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('securityPin').focus(), 100);
+        }
+
+        function requestDeleteSingle(id) {
+            actionToDelete = id;
+            document.getElementById('securityPin').value = '';
+            document.getElementById('securityMsg').textContent = 'Introduce el código (3501) para eliminar este prompt:';
+            document.getElementById('securityModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('securityPin').focus(), 100);
+        }
+
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.add('hidden');
+            actionToDelete = null;
+        }
+
+        function confirmDeleteAction() {
+            const pin = document.getElementById('securityPin').value.trim();
+            if (pin === '3501') {
+                closeSecurityModal();
+                if (actionToDelete === 'all') {
+                    // Borrado radical y explícito
+                    prompts = [];
+                    localStorage.removeItem(STORAGE_KEY);
+                    saveToStorage();
+                    renderPrompts();
+                    
+                    showToast("Información Borrada Exitosamente", "success");
+                } else if (actionToDelete !== null && actionToDelete !== undefined) {
+                    prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
+                    saveToStorage();
+                    renderPrompts();
+                    showToast("Prompt eliminado correctamente");
+                }
+                actionToDelete = null;
+            } else {
+                showToast("Código incorrecto", "error");
+                document.getElementById('securityPin').value = '';
+                document.getElementById('securityPin').focus();
+            }
+        }
+
+        function savePrompt(event) {
+            event.preventDefault();
+            const id = document.getElementById('promptId').value;
+            const title = document.getElementById('formTitle').value.trim();
+            const category = document.getElementById('formCategory').value.trim() || 'General';
+            const content = document.getElementById('formContent').value.trim();
+            const dateStr = new Date().toLocaleDateString('es-ES');
+
+            if (id) {
+                const index = prompts.findIndex(item => String(item.id) === String(id));
+                if (index !== -1) {
+                    prompts[index] = { ...prompts[index], title, category, content };
+                }
+                showToast('Actualizado correctamente');
+            } else {
+                const newPrompt = { id: Date.now(), title, category, content, date: dateStr };
+                prompts.unshift(newPrompt);
+                showToast('Creado con éxito');
+            }
+
+            saveToStorage();
+            renderPrompts();
+            closeModal();
+        }
+
+        // --- CARGUE DE EXCEL ---
+        function triggerFileSelect() {
+            document.getElementById('excelFile').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                    if (!rows || rows.length === 0) {
+                        showToast("El archivo está vacío", "error");
+                        return;
+                    }
+
+                    let newPrompts = [];
+                    const todayStr = new Date().toLocaleDateString('es-ES');
+                    let startIndex = 0;
+
+                    if (rows.length > 0) {
+                        const firstRowStr = rows[0].join(' ').toLowerCase();
+                        if (firstRowStr.includes('tit') || firstRowStr.includes('prompt') || firstRowStr.includes('nombre')) {
+                            startIndex = 1;
+                        }
+                    }
+
+                    for (let i = startIndex; i < rows.length; i++) {
+                        let r = rows[i];
+                        if (!r || r.length === 0) continue;
+
+                        let title = r[0] !== undefined ? String(r[0]).trim() : '';
+                        let category = r[1] !== undefined ? String(r[1]).trim() : 'General';
+                        let date = r[2] !== undefined ? String(r[2]).trim() : '';
+                        let content = r[3] !== undefined ? String(r[3]).trim() : '';
+
+                        if (!content && r.length > 1) {
+                            content = String(r[r.length - 1]).trim();
+                        }
+                        if (!title && r.length > 0) {
+                            title = String(r[0]).trim();
+                        }
+
+                        if (title || content) {
+                            newPrompts.push({
+                                id: Date.now() + i + Math.floor(Math.random() * 1000),
+                                title: title || 'Sin Título',
+                                category: category || 'General',
+                                content: content || title,
+                                date: date || todayStr
+                            });
+                        }
+                    }
+
+                    if (newPrompts.length > 0) {
+                        prompts = [...newPrompts, ...prompts];
+                        saveToStorage();
+                        renderPrompts();
+                        showToast(`¡Se cargaron ${newPrompts.length} prompts correctamente!`);
+                    } else {
+                        showToast("No se encontraron registros válidos", "error");
+                    }
+                } catch (err) {
+                    console.error("Error al leer Excel:", err);
+                    showToast("Error al leer el archivo Excel", "error");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processBulkText() {
+            const text = document.getElementById('bulkTextContent').value.trim();
+            if (!text) {
+                showToast("Ingresa algún texto", "error");
+                return;
+            }
+
+            const blocks = text.split(/---/).map(b => b.trim()).filter(b => b.length > 0);
+            let importedCount = 0;
+
+            blocks.forEach((block, idx) => {
+                const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                let title = `Prompt Masivo ${idx + 1}`;
+                let category = 'General';
+                let content = block;
+
+                if (lines.length > 1 && (lines[0].toLowerCase().startsWith('título:') || lines[0].toLowerCase().startsWith('title:'))) {
+                    title = lines[0].split(':')[1].trim();
+                    content = lines.slice(1).join('\n');
+                } else if (lines.length > 0) {
+                    title = lines[0].substring(0, 40);
+                }
+
+                prompts.unshift({
+                    id: Date.now() + idx,
+                    title: title,
+                    category: category,
+                    content: content,
+                    date: new Date().toLocaleDateString('es-ES')
+                });
+                importedCount++;
+            });
+
+            saveToStorage();
+            renderPrompts();
+            closeBulkModal();
+            document.getElementById('bulkTextContent').value = '';
+            showToast(`¡Se importaron ${importedCount} prompts!`);
+        }
+
+        function exportToExcel() {
+            if (prompts.length === 0) {
+                showToast("No hay prompts para exportar", "error");
+                return;
+            }
+            const dataToExport = prompts.map(p => ({
+                Título: p.title,
+                Categoría: p.category,
+                Fecha: p.date,
+                Prompt: p.content
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Prompts");
+            XLSX.writeFile(workbook, "Banco_de_Prompts_Tito_Aponte.xlsx");
+            showToast("¡Archivo Excel exportado!");
+        }
+
+        function loadSamplePrompts() {
+            const sampleData = [
+                {
+                    id: Date.now(),
+                    title: "Estructurador de Prompt Maestro (P-Superprompt)",
+                    category: "Ingeniería",
+                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts para maximizar el rendimiento de la Inteligencia Artificial.",
+                    date: new Date().toLocaleDateString('es-ES')
+                },
+                {
+                    id: Date.now() + 1,
+                    title: "Análisis de Datos y Código Limpio",
+                    category: "Desarrollo",
+                    content: "Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento con explicaciones claras.",
+                    date: new Date().toLocaleDateString('es-ES')
+                }
+            ];
+            prompts = sampleData;
+            saveToStorage();
+            renderPrompts();
+            showToast("Se cargaron prompts de ejemplo");
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
