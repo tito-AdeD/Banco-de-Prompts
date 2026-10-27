@@ -6,7 +6,7 @@
     <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS CDN (Librería oficial para leer Excel) -->
+    <!-- SheetJS CDN (Librería estable para leer Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,14 +38,14 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción Global Compactos -->
+            <!-- Botones de Acción Global -->
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <!-- Cargar Excel Directo -->
-                <button onclick="document.getElementById('excelFile').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                <!-- Botón de Cargar Excel -->
+                <button onclick="triggerFileSelect()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
                 </button>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
@@ -65,10 +65,10 @@
         </div>
     </header>
 
-    <!-- Main Container con Espacio Optimizado -->
+    <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-4">
         
-        <!-- Barra de Búsqueda y Filtros Compacta -->
+        <!-- Barra de Búsqueda y Filtros -->
         <div class="bg-white border border-slate-300 p-3 rounded-lg shadow-sm mb-4 flex flex-col md:flex-row gap-3 items-center justify-between">
             <div class="relative w-full md:w-80">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        <!-- Barra de estado secundaria -->
+        <!-- Barra de estado -->
         <div class="flex justify-between items-center mb-3 px-1 text-xs text-slate-500">
             <span id="promptCount">Mostrando prompts...</span>
             <button onclick="loadSamplePrompts()" class="text-indigo-600 hover:text-indigo-800 underline transition cursor-pointer">Cargar ejemplo</button>
@@ -221,7 +221,7 @@
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            }, 2500);
         }
 
         function renderPrompts() {
@@ -408,103 +408,177 @@
             closeModal();
         }
 
-        // --- LECTOR DE EXCEL DIRECTO CON CONSOLA DE DEPURO ---
+        // --- DISPARADOR Y LECTOR DE EXCEL CORREGIDO ---
+        function triggerFileSelect() {
+            document.getElementById('excelFile').click();
+        }
+
         function handleFileUpload(event) {
             const file = event.target.files[0];
-            if (!file) {
-                console.log("No se seleccionó ningún archivo.");
-                return;
-            }
-
-            console.log("Archivo seleccionado:", file.name, file.size, "bytes");
+            if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function (e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    console.log("Hojas encontradas en el Excel:", workbook.SheetNames);
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    
-                    // Convertir la hoja directamente en matriz de filas (header: 1)
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-                    console.log("Total de filas leídas:", rows.length);
+                    const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-                    if (!rows || rows.length === 0) {
-                        showToast("El archivo está vacío", "error");
+                    if (!rawJson || rawJson.length === 0) {
+                        showToast("El archivo Excel está vacío", "error");
                         return;
                     }
 
                     let newPrompts = [];
                     const todayStr = new Date().toLocaleDateString('es-ES');
 
-                    // Recorremos desde la fila 0 (o 1 si tiene cabecera clara)
-                    // Si la fila 0 tiene las palabras 'titulo' o 'prompt', la saltamos.
-                    let startIdx = 0;
-                    if (rows.length > 0) {
-                        const firstRowStr = JSON.stringify(rows[0]).toLowerCase();
-                        if (firstRowStr.includes('tít') || firstRowStr.includes('tit') || firstRowStr.includes('prompt')) {
-                            startIdx = 1;
-                        }
-                    }
+                    rawJson.forEach((row, idx) => {
+                        let title = '', category = 'General', date = todayStr, content = '';
 
-                    for (let i = startIdx; i < rows.length; i++) {
-                        let r = rows[i];
-                        if (!r || r.length === 0) continue;
+                        Object.keys(row).forEach(key => {
+                            const cleanKey = key.toString().toLowerCase().trim();
+                            const val = row[key] ? row[key].toString().trim() : '';
 
-                        // Limpiar celdas vacías o nulas
-                        let cells = r.map(c => c !== undefined && c !== null ? String(c).trim() : '');
-                        let nonEmp = cells.filter(c => c !== '');
-
-                        if (nonEmp.length === 0) continue;
-
-                        let title = cells[0] || 'Sin Título';
-                        let category = cells[1] || 'General';
-                        let date = cells[2] || todayStr;
-                        let content = cells[3] || nonEmp[nonEmp.length - 1] || title;
-
-                        // Si la celda 1 parece fecha o contenido en vez de categoría
-                        if (category.includes('/') || category.length > 25) {
-                            date = category;
-                            category = 'General';
-                        }
-
-                        newPrompts.push({
-                            id: Date.now() + i + Math.floor(Math.random() * 10000),
-                            title: title,
-                            category: category,
-                            content: content,
-                            date: date.length < 15 ? date : todayStr
+                            if (cleanKey.includes('tit') || cleanKey.includes('nom') || cleanKey.includes('title')) {
+                                title = val;
+                            } else if (cleanKey.includes('cat') || cleanKey.includes('tipo') || cleanKey.includes('tag')) {
+                                category = val;
+                            } else if (cleanKey.includes('fec') || cleanKey.includes('date')) {
+                                date = val;
+                            } else if (cleanKey.includes('prompt') || cleanKey.includes('cont') || cleanKey.includes('text') || cleanKey.includes('desc')) {
+                                content = val;
+                            }
                         });
-                    }
 
-                    console.log("Prompts procesados con éxito:", newPrompts);
+                        const values = Object.values(row).map(v => v ? v.toString().trim() : '').filter(v => v !== '');
+                        if (!title && values.length > 0) title = values[0];
+                        if (!content && values.length > 1) content = values[values.length - 1];
+
+                        if (title || content) {
+                            newPrompts.push({
+                                id: Date.now() + idx + Math.floor(Math.random() * 1000),
+                                title: title || 'Sin Título',
+                                category: category || 'General',
+                                content: content || title,
+                                date: date || todayStr
+                            });
+                        }
+                    });
 
                     if (newPrompts.length > 0) {
                         prompts = [...newPrompts, ...prompts];
                         saveToStorage();
                         renderPrompts();
                         updateCategoryFilter();
-                        showToast(`¡Se cargaron ${newPrompts.length} prompts con éxito!`);
+                        showToast(`¡Se cargaron ${newPrompts.length} prompts correctamente!`);
                     } else {
-                        showToast("No se encontraron datos legibles en el archivo.", "error");
+                        showToast("No se encontraron registros válidos", "error");
                     }
                 } catch (err) {
-                    console.error("Error crítico al procesar Excel:", err);
-                    showToast("Error al procesar el archivo Excel (ver consola F12)", "error");
+                    console.error("Error al leer Excel:", err);
+                    showToast("Error al leer el archivo Excel", "error");
                 } finally {
-                    event.target.value = ''; // Limpiar input file
+                    event.target.value = '';
                 }
             };
-            
-            reader.onerror = function (err) {
-                console.error("Error al leer el archivo con FileReader:", err);
-                showToast("No se pudo leer el archivo", "error");
-            };
-
             reader.readAsArrayBuffer(file);
         }
 
-        function process
+        function processBulkText() {
+            const text = document.getElementById('bulkTextContent').value.trim();
+            if (!text) {
+                showToast("Ingresa algún texto", "error");
+                return;
+            }
+
+            const blocks = text.split(/---/).map(b => b.trim()).filter(b => b.length > 0);
+            let importedCount = 0;
+
+            blocks.forEach((block, idx) => {
+                const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                let title = `Prompt Masivo ${idx + 1}`;
+                let category = 'General';
+                let content = block;
+
+                if (lines.length > 1 && (lines[0].toLowerCase().startsWith('título:') || lines[0].toLowerCase().startsWith('title:'))) {
+                    title = lines[0].split(':')[1].trim();
+                    content = lines.slice(1).join('\n');
+                } else if (lines.length > 0) {
+                    title = lines[0].substring(0, 40);
+                }
+
+                prompts.unshift({
+                    id: Date.now() + idx,
+                    title: title,
+                    category: category,
+                    content: content,
+                    date: new Date().toLocaleDateString('es-ES')
+                });
+                importedCount++;
+            });
+
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            closeBulkModal();
+            document.getElementById('bulkTextContent').value = '';
+            showToast(`¡Se importaron ${importedCount} prompts!`);
+        }
+
+        function exportToExcel() {
+            if (prompts.length === 0) {
+                showToast("No hay prompts para exportar", "error");
+                return;
+            }
+            const dataToExport = prompts.map(p => ({
+                Título: p.title,
+                Categoría: p.category,
+                Fecha: p.date,
+                Prompt: p.content
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Prompts");
+            XLSX.writeFile(workbook, "Banco_de_Prompts_Tito_Aponte.xlsx");
+            showToast("¡Archivo Excel exportado!");
+        }
+
+        function loadSamplePrompts(showNotify = true) {
+            const sampleData = [
+                {
+                    id: 1,
+                    title: "Estructurador de Prompt Maestro (P-Superprompt)",
+                    category: "Ingeniería",
+                    content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts para maximizar el rendimiento de la Inteligencia Artificial.",
+                    date: new Date().toLocaleDateString('es-ES')
+                },
+                {
+                    id: 2,
+                    title: "Análisis de Datos y Código Limpio",
+                    category: "Desarrollo",
+                    content: "Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento con explicaciones claras.",
+                    date: new Date().toLocaleDateString('es-ES')
+                }
+            ];
+            prompts = sampleData;
+            saveToStorage();
+            renderPrompts();
+            updateCategoryFilter();
+            if(showNotify) showToast("Se cargaron prompts de ejemplo");
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
