@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Prompts - Tito Aponte Mesa</title>
+    <title>Banco de Prompts - Tito Aponte</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS CDN -->
@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold tracking-tight text-slate-900">Banco de Prompts</h1>
-                    <p class="text-[11px] text-slate-500">Tito Aponte Mesa • Total: <span id="headerTotalPrompts">0</span></p>
+                    <p class="text-[11px] text-slate-500">Tito Aponte M • Total: <span id="headerTotalPrompts">0</span></p>
                 </div>
             </div>
 
@@ -205,7 +205,15 @@
 
     <!-- Script de la Aplicación -->
     <script>
-        let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
+        // Cargar datos limpios y blindar contra datos fantasma
+        let prompts = [];
+        try {
+            const saved = localStorage.getItem('tito_prompts');
+            prompts = saved ? JSON.parse(saved) : [];
+        } catch(e) {
+            prompts = [];
+        }
+
         let actionToDelete = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -420,17 +428,18 @@
             if (pin === '3501') {
                 closeSecurityModal();
                 if (actionToDelete === 'all') {
-                    // Borrado radical y forzado del almacenamiento local
+                    // Borrado radical y absoluto de la memoria local
                     prompts = [];
                     localStorage.removeItem('tito_prompts');
                     localStorage.clear();
-                    
+
+                    // Mostrar mensaje solicitado con claridad
                     showToast("Información Borrada Exitosamente", "success");
-                    
-                    // Forzar recarga limpia de la página después de 1 segundo para limpiar caché del navegador
+
+                    // Forzar recarga automática limpia en 1.2 segundos eliminando cualquier rastro de caché
                     setTimeout(() => {
-                        window.location.reload(true);
-                    }, 1000);
+                        window.location.href = window.location.pathname + '?nocache=' + Date.now();
+                    }, 1200);
 
                 } else if (actionToDelete !== null && actionToDelete !== undefined) {
                     prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
