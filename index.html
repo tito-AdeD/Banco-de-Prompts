@@ -209,7 +209,8 @@
         let actionToDelete = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (prompts.length === 0) {
+            // Solo carga ejemplos si el almacenamiento está vacío por primera vez y nunca se ha guardado nada explícitamente
+            if (localStorage.getItem('tito_prompts') === null && prompts.length === 0) {
                 loadSamplePrompts(false);
             } else {
                 renderPrompts();
@@ -425,9 +426,10 @@
                 closeSecurityModal();
                 if (actionToDelete === 'all') {
                     prompts = [];
-                    localStorage.removeItem('tito_prompts');
-                    saveToStorage();
+                    localStorage.setItem('tito_prompts', JSON.stringify([])); // Guardar array vacío explícitamente
                     renderPrompts();
+                    updateCategoryFilter();
+                    updateStats();
                     showToast("Se ha borrado toda la información", "error");
                 } else if (actionToDelete !== null && actionToDelete !== undefined) {
                     prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
