@@ -155,13 +155,11 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Categoría</label>
+                    <!-- Conectado al datalist para mostrar opciones desplegables existentes -->
                     <input type="text" id="formCategory" required placeholder="Ej: Desarrollo, Productividad" list="categorySuggestions"
                         class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
                     <datalist id="categorySuggestions">
-                        <option value="Desarrollo">
-                        <option value="Productividad">
-                        <option value="Redacción">
-                        <option value="Estrategia">
+                        <!-- Se llena dinámicamente -->
                     </datalist>
                 </div>
                 <div>
@@ -219,11 +217,19 @@
                 updateCategoryFilter();
                 updateStats();
             }
+            
+            // Permitir presionar Enter en el PIN de seguridad para confirmar
+            document.getElementById('securityPin').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    confirmDeleteAction();
+                }
+            });
         });
 
         function saveToStorage() {
             localStorage.setItem('tito_prompts', JSON.stringify(prompts));
             updateStats();
+            updateCategoryFilter();
         }
 
         function updateStats() {
@@ -310,15 +316,21 @@
         }
 
         function updateCategoryFilter() {
-            const select = document.getElementById('categoryFilter');
-            const currentVal = select.value;
             const categories = [...new Set(prompts.map(p => p.category || 'General'))].sort();
             
+            // Actualizar selector de filtro principal
+            const select = document.getElementById('categoryFilter');
+            const currentVal = select.value;
             select.innerHTML = '<option value="all">Todas</option>' + 
                 categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-            
             if(categories.includes(currentVal)) {
                 select.value = currentVal;
+            }
+
+            // Actualizar datalist de categorías para edición/creación
+            const datalist = document.getElementById('categorySuggestions');
+            if(datalist) {
+                datalist.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">`).join('');
             }
         }
 
@@ -361,9 +373,10 @@
         }
 
         function openModal(id = null) {
+            updateCategoryFilter(); // Refrescar sugerencias al abrir modal
             document.getElementById('promptModal').classList.remove('hidden');
-            if (id) {
-                const p = prompts.find(item => item.id === id);
+            if (id !== null && id !== undefined) {
+                const p = prompts.find(item => item.id == id);
                 if (p) {
                     document.getElementById('modalTitle').textContent = 'Editar Prompt';
                     document.getElementById('promptId').value = p.id;
@@ -379,7 +392,7 @@
         }
 
         function closeModal() {
-            document.getElementById('promptModal').classList.add('hidden');
+            document.getElementById('promptModal'].classList.add('hidden');
         }
 
         function openBulkModal() {
@@ -423,8 +436,9 @@
                     updateCategoryFilter();
                     updateStats();
                     showToast("Se ha borrado toda la información", "error");
-                } else if (actionToDelete !== null) {
-                    prompts = prompts.filter(item => item.id !== actionToDelete);
+                } else if (actionToDelete !== null && actionToDelete !== undefined) {
+                    // Conversión flexible de ID para asegurar coincidencia numérica/string
+                    prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
                     saveToStorage();
                     renderPrompts();
                     updateCategoryFilter();
@@ -447,7 +461,7 @@
             const dateStr = new Date().toLocaleDateString('es-ES');
 
             if (id) {
-                const index = prompts.findIndex(item => item.id == id);
+                const index = prompts.findIndex(item => String(item.id) === String(id));
                 if (index !== -1) {
                     prompts[index] = { ...prompts[index], title, category, content };
                 }
@@ -464,7 +478,7 @@
             closeModal();
         }
 
-        // --- CARGUE DE EXCEL ULTRA ROBUSTO Y BLINDADO ---
+        // --- CARGUE DE EXCEL ULTRA ROBUSTO ---
         function triggerFileSelect() {
             document.getElementById('excelFile').click();
         }
