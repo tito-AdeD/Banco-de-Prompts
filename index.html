@@ -44,7 +44,7 @@
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <!-- Botón de Cargar Excel Blindado -->
+                <!-- Botón de Cargar Excel -->
                 <button onclick="document.getElementById('excelFile').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
                 </button>
@@ -424,17 +424,15 @@
             if (pin === '3501') {
                 closeSecurityModal();
                 if (actionToDelete === 'all') {
-                    localStorage.removeItem('tito_prompts');
                     prompts = [];
+                    localStorage.removeItem('tito_prompts');
+                    saveToStorage();
                     renderPrompts();
-                    updateCategoryFilter();
-                    updateStats();
                     showToast("Se ha borrado toda la información", "error");
                 } else if (actionToDelete !== null && actionToDelete !== undefined) {
                     prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
                     saveToStorage();
                     renderPrompts();
-                    updateCategoryFilter();
                     showToast("Prompt eliminado correctamente");
                 }
                 actionToDelete = null;
@@ -467,11 +465,10 @@
 
             saveToStorage();
             renderPrompts();
-            updateCategoryFilter();
             closeModal();
         }
 
-        // --- CARGUE DE EXCEL ROBUSTO CON RESPALDO ---
+        // --- CARGUE DE EXCEL ROBUSTO ---
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -532,7 +529,6 @@
                         prompts = [...newPrompts, ...prompts];
                         saveToStorage();
                         renderPrompts();
-                        updateCategoryFilter();
                         showToast(`¡Se cargaron ${newPrompts.length} prompts correctamente!`);
                     } else {
                         showToast("No se encontraron registros válidos", "error");
@@ -582,7 +578,6 @@
 
             saveToStorage();
             renderPrompts();
-            updateCategoryFilter();
             closeBulkModal();
             document.getElementById('bulkTextContent').value = '';
             showToast(`¡Se importaron ${importedCount} prompts!`);
@@ -627,7 +622,6 @@
             prompts = sampleData;
             saveToStorage();
             renderPrompts();
-            updateCategoryFilter();
             if(showNotify) showToast("Se cargaron prompts de ejemplo");
         }
 
