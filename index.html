@@ -44,7 +44,7 @@
                     <i class="fa-solid fa-plus"></i> Nuevo
                 </button>
                 
-                <!-- Botón directo y habilitado para Cargar Excel -->
+                <!-- Botón de Cargar Excel -->
                 <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer flex items-center gap-1.5">
                     <i class="fa-solid fa-file-excel"></i> Cargar Excel
                     <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="processFileConfirmed(event)">
@@ -58,9 +58,9 @@
                     <i class="fa-solid fa-download"></i>
                 </button>
 
-                <!-- Botón de Borrado Protegido con Clave (3501) -->
+                <!-- Botón de Borrado Total Protegido (3501) -->
                 <button onclick="promptClearAll()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-md text-xs transition flex items-center gap-1 cursor-pointer" title="Borrar todo con clave">
-                    <i class="fa-solid fa-trash-can"></i>
+                    <i class="fa-solid fa-trash-can"></i> Borrar Todo
                 </button>
             </div>
         </div>
@@ -69,7 +69,7 @@
     <!-- Main Container con Espacio Optimizado -->
     <main class="max-w-7xl mx-auto px-4 py-4">
         
-        <!-- Barra de Búsqueda y Filtros Compacta en una sola línea -->
+        <!-- Barra de Búsqueda y Filtros Compacta -->
         <div class="bg-white border border-slate-300 p-3 rounded-lg shadow-sm mb-4 flex flex-col md:flex-row gap-3 items-center justify-between">
             <div class="relative w-full md:w-80">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -116,24 +116,24 @@
         </div>
     </main>
 
-    <!-- Modal para Clave de Seguridad (Protegido con 3501) -->
+    <!-- Modal de Seguridad Único (Clave: 3501) -->
     <div id="securityModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white border border-slate-300 rounded-xl w-full max-w-sm shadow-xl overflow-hidden">
             <div class="px-5 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-rose-600"></i> Código de Seguridad</h3>
+                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-rose-600"></i> Código de Seguridad (3501)</h3>
                 <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-slate-700 transition cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-5 space-y-3">
                 <p id="securityMsg" class="text-xs text-slate-600">
-                    Introduce el código clave de seguridad (3501):
+                    Introduce el código clave de seguridad para autorizar la eliminación:
                 </p>
                 <div>
-                    <input type="password" id="securityPin" placeholder="••••" maxlength="4" onkeydown="if(event.key === 'Enter') verifyAndDelete()"
+                    <input type="password" id="securityPin" placeholder="••••" maxlength="4"
                         class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-center text-base tracking-widest text-slate-800 focus:outline-none focus:border-rose-500 font-mono">
                 </div>
                 <div class="flex justify-end gap-2 pt-1">
                     <button type="button" onclick="closeSecurityModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer">Cancelar</button>
-                    <button type="button" onclick="verifyAndDelete()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer">Confirmar</button>
+                    <button type="button" onclick="confirmDeleteAction()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition shadow-sm cursor-pointer">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -209,7 +209,9 @@
     <!-- Script de la Aplicación -->
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
-        let deleteTargetId = null; // 'all' o ID numérico del prompt
+        
+        // Variables de control de borrado seguro
+        let actionToDelete = null; // 'all' o un número ID
 
         document.addEventListener('DOMContentLoaded', () => {
             if (prompts.length === 0) {
@@ -284,7 +286,7 @@
                             <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
                             <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
                                 <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                                <button onclick="promptDeleteSingle(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                                <button onclick="requestDeleteSingle(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
                             </div>
                         </div>
                         <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
@@ -391,47 +393,47 @@
             document.getElementById('bulkModal').classList.add('hidden');
         }
 
-        // Sistema de Seguridad para Borrados (Clave: 3501)
+        // --- FUNCIONES DE BORRADO SEGURO CON CLAVE 3501 ---
         function promptClearAll() {
-            deleteTargetId = 'all';
+            actionToDelete = 'all';
             document.getElementById('securityPin').value = '';
-            document.getElementById('securityMsg').textContent = 'Introduce el código clave (3501) para borrar toda la información:';
+            document.getElementById('securityMsg').textContent = 'Introduce el código (3501) para borrar TODO el banco:';
             document.getElementById('securityModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('securityPin').focus(), 100);
         }
 
-        function promptDeleteSingle(id) {
-            deleteTargetId = id;
+        function requestDeleteSingle(id) {
+            actionToDelete = id;
             document.getElementById('securityPin').value = '';
-            document.getElementById('securityMsg').textContent = 'Introduce el código clave (3501) para eliminar este prompt:';
+            document.getElementById('securityMsg').textContent = 'Introduce el código (3501) para eliminar este prompt:';
             document.getElementById('securityModal').classList.remove('hidden');
             setTimeout(() => document.getElementById('securityPin').focus(), 100);
         }
 
         function closeSecurityModal() {
             document.getElementById('securityModal').classList.add('hidden');
-            deleteTargetId = null;
+            actionToDelete = null;
         }
 
-        function verifyAndDelete() {
+        function confirmDeleteAction() {
             const pin = document.getElementById('securityPin').value.trim();
             if (pin === '3501') {
                 closeSecurityModal();
-                if (deleteTargetId === 'all') {
+                if (actionToDelete === 'all') {
                     localStorage.removeItem('tito_prompts');
                     prompts = [];
                     renderPrompts();
                     updateCategoryFilter();
                     updateStats();
                     showToast("Se ha borrado toda la información", "error");
-                } else if (deleteTargetId !== null) {
-                    prompts = prompts.filter(item => item.id !== deleteTargetId);
+                } else if (actionToDelete !== null) {
+                    prompts = prompts.filter(item => item.id !== actionToDelete);
                     saveToStorage();
                     renderPrompts();
                     updateCategoryFilter();
                     showToast("Prompt eliminado correctamente");
                 }
-                deleteTargetId = null;
+                actionToDelete = null;
             } else {
                 showToast("Código incorrecto", "error");
                 document.getElementById('securityPin').value = '';
