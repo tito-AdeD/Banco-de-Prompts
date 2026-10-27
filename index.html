@@ -209,9 +209,16 @@
     <!-- Script de la Aplicación -->
     <script>
         let prompts = JSON.parse(localStorage.getItem('tito_prompts')) || [];
-        let actionToDelete = null; // Guarda 'all' o el ID numérico del prompt a eliminar
+        let actionToDelete = null;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Asegurar IDs únicos inalterables si algún registro antiguo no lo tiene
+            prompts = prompts.map((p, index) => ({
+                ...p,
+                id: p.id || (Date.now() + index)
+            }));
+            saveToStorage();
+
             if (prompts.length === 0) {
                 loadSamplePrompts(false);
             } else {
@@ -277,14 +284,15 @@
             }
 
             emptyState.classList.add('hidden');
+            // Usamos un identificador seguro basado en cadena/número exacto del objeto `p.id`
             grid.innerHTML = filtered.map(p => `
                 <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-slate-400 transition group">
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2">
                             <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-medium px-2 py-0.5 rounded">${escapeHtml(p.category || 'General')}</span>
                             <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
-                                <button onclick="openModal(${p.id})" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                                <button onclick="requestDeleteSingle(${p.id})" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar con clave"><i class="fa-solid fa-trash text-xs"></i></button>
+                                <button onclick="openModal('${p.id}')" class="text-slate-400 hover:text-indigo-600 p-1 transition cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="requestDeleteSingle('${p.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="Eliminar con clave"><i class="fa-solid fa-trash text-xs"></i></button>
                             </div>
                         </div>
                         <h3 class="font-bold text-slate-900 text-sm mb-1.5">${escapeHtml(p.title || 'Sin Título')}</h3>
@@ -293,14 +301,14 @@
                     
                     <div>
                         <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 mb-1.5">
-                            <button onclick="copyPrompt(${p.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                            <button onclick="copyPrompt('${p.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-medium py-1.5 px-2.5 rounded transition flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                 <i class="fa-regular fa-copy"></i> Copiar
                             </button>
                             <div class="flex gap-1">
-                                <button onclick="openAI('gemini', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
-                                <button onclick="openAI('chatgpt', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
-                                <button onclick="openAI('claude', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
-                                <button onclick="openAI('copilot', ${p.id})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
+                                <button onclick="openAI('gemini', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Gemini">✨</button>
+                                <button onclick="openAI('chatgpt', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en ChatGPT">💬</button>
+                                <button onclick="openAI('claude', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Claude">🧠</button>
+                                <button onclick="openAI('copilot', '${p.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded transition text-center cursor-pointer" title="Abrir en Copilot">🌐</button>
                             </div>
                         </div>
                         <span class="text-[9px] text-slate-400 block text-right">${p.date || ''}</span>
@@ -326,9 +334,13 @@
             renderPrompts();
         }
 
+        // Búsqueda robusta por ID exacto (soporta número y string)
         async function copyPrompt(id) {
-            const p = prompts.find(item => item.id === id);
-            if (!p) return;
+            const p = prompts.find(item => String(item.id) === String(id));
+            if (!p) {
+                showToast("No se encontró el prompt", "error");
+                return;
+            }
             
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -341,7 +353,7 @@
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
                 }
-                showToast(`¡Prompt copiado!`);
+                showToast(`¡Prompt copiado con éxito!`);
             } catch (err) {
                 showToast("No se pudo copiar", "error");
             }
@@ -362,8 +374,8 @@
 
         function openModal(id = null) {
             document.getElementById('promptModal').classList.remove('hidden');
-            if (id) {
-                const p = prompts.find(item => item.id === id);
+            if (id !== null && id !== 'null') {
+                const p = prompts.find(item => String(item.id) === String(id));
                 if (p) {
                     document.getElementById('modalTitle').textContent = 'Editar Prompt';
                     document.getElementById('promptId').value = p.id;
@@ -424,7 +436,7 @@
                     updateStats();
                     showToast("Se ha borrado toda la información", "error");
                 } else if (actionToDelete !== null) {
-                    prompts = prompts.filter(item => item.id !== actionToDelete);
+                    prompts = prompts.filter(item => String(item.id) !== String(actionToDelete));
                     saveToStorage();
                     renderPrompts();
                     updateCategoryFilter();
@@ -447,13 +459,13 @@
             const dateStr = new Date().toLocaleDateString('es-ES');
 
             if (id) {
-                const index = prompts.findIndex(item => item.id == id);
+                const index = prompts.findIndex(item => String(item.id) === String(id));
                 if (index !== -1) {
                     prompts[index] = { ...prompts[index], title, category, content };
                 }
                 showToast('Actualizado correctamente');
             } else {
-                const newPrompt = { id: Date.now(), title, category, content, date: dateStr };
+                const newPrompt = { id: 'p_' + Date.now() + Math.floor(Math.random()*1000), title, category, content, date: dateStr };
                 prompts.unshift(newPrompt);
                 showToast('Creado con éxito');
             }
@@ -464,7 +476,7 @@
             closeModal();
         }
 
-        // --- CARGUE DE EXCEL / CSV FUNCIONAL ---
+        // --- CARGUE DE EXCEL / CSV CON IDs ÚNICOS ---
         function triggerFileSelect() {
             document.getElementById('excelFile').click();
         }
@@ -514,7 +526,7 @@
 
                         if (title || content) {
                             newPrompts.push({
-                                id: Date.now() + idx + Math.floor(Math.random() * 1000),
+                                id: 'exc_' + Date.now() + idx + Math.floor(Math.random() * 10000),
                                 title: title || 'Sin Título',
                                 category: category || 'General',
                                 content: content || title,
@@ -566,7 +578,7 @@
                 }
 
                 prompts.unshift({
-                    id: Date.now() + idx,
+                    id: 'bulk_' + Date.now() + idx,
                     title: title,
                     category: category,
                     content: content,
@@ -605,36 +617,18 @@
         function loadSamplePrompts(showNotify = true) {
             const sampleData = [
                 {
-                    id: 1,
+                    id: 'sample_1',
                     title: "Estructurador de Prompt Maestro (P-Superprompt)",
                     category: "Ingeniería",
                     content: "Actúa como un Meta-Prompt y Asistente Maestro de Ingeniería de Prompts para maximizar el rendimiento de la Inteligencia Artificial.",
                     date: new Date().toLocaleDateString('es-ES')
                 },
                 {
-                    id: 2,
+                    id: 'sample_2',
                     title: "Análisis de Datos y Código Limpio",
                     category: "Desarrollo",
                     content: "Revisa el siguiente código buscando posibles cuellos de botella y optimizaciones de rendimiento con explicaciones claras.",
                     date: new Date().toLocaleDateString('es-ES')
                 }
             ];
-            prompts = sampleData;
-            saveToStorage();
-            renderPrompts();
-            updateCategoryFilter();
-            if(showNotify) showToast("Se cargaron prompts de ejemplo");
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-    </script>
-</body>
-</html>
+            
